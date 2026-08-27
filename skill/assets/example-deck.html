@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. 네모로 그리는 픽셀아트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- FONT-FACE -->
+<style>
+/* ========== 디자인 토큰 ==========
+   색은 팔레트 밖으로 나가지 않는다. 새 색을 추가하지 말 것.
+   본문 글자색은 항상 --ink. 파스텔 위 흰 글씨는 금지(대비 2.06:1). */
+:root{
+  /* surface */
+  --bg:#FFF8F7; --grid:#F5DBDC; --white:#FFFFFF; --soft:#FDF2F1;
+  /* ink */
+  --ink:#152A20;
+  /* color blocks */
+  --pink:#FC999F; --purple:#D6BDF7; --orange:#FFD4A8;
+  --yellow:#FAE5A8; --mint:#9CF0E5; --green:#D2FABB;
+  --accent:var(--pink);
+
+  /* spacing — 8px 기반 */
+  --s-xxs:4px; --s-xs:8px; --s-sm:12px; --s-md:16px;
+  --s-lg:24px; --s-xl:32px; --s-xxl:48px;
+
+  /* radius */
+  --r-sm:8px; --r-md:16px; --r-lg:24px; --r-xl:32px; --r-pill:999px;
+
+  --bw:2.5px;
+  --font-title:"Paperlogy","Black Han Sans","Jua","Pretendard","Noto Sans KR",sans-serif;
+  --font-body:"Paperlogy","Gowun Dodum","Pretendard","Noto Sans KR",sans-serif;
+  --font-label:"Paperlogy","Jua","Pretendard","Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#241d1b}
+body{font-family:var(--font-body);color:var(--ink);display:grid;place-items:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ========== 무대 ========== */
+#stage{width:1280px;height:720px;position:relative;transform-origin:center center;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:72px 72px;overflow:hidden}
+section{position:absolute;inset:0;padding:var(--s-xl) 40px;display:none;flex-direction:column}
+section.is-active{display:flex;animation:pop .22s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.99)}to{opacity:1;transform:none}}
+#bar{position:absolute;left:0;top:0;height:6px;background:var(--ink);z-index:30;
+  transition:width .25s ease;opacity:.85}
+
+/* ========== 브라우저 창 ========== */
+.win{flex:1;min-height:0;display:flex;flex-direction:column;border:var(--bw) solid var(--ink);
+  border-radius:var(--r-lg);background:var(--white);position:relative}
+.win__bar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:var(--s-sm);padding:10px var(--s-lg);
+  background:var(--bg);border-bottom:var(--bw) solid var(--ink);
+  border-radius:calc(var(--r-lg) - 2px) calc(var(--r-lg) - 2px) 0 0;min-height:70px;flex:none}
+.win__bar h1,.win__bar h2{justify-self:center;min-width:0;text-align:center;
+  font-family:var(--font-title);font-size:52px;line-height:1.1;letter-spacing:-.025em;white-space:nowrap}
+.win__bar h1.sm{font-size:44px}
+.win__bar h1.xs{font-size:36px;white-space:normal;line-height:1.15}
+.barleft{justify-self:start;min-width:0;display:flex}
+.dots{display:flex;gap:10px;justify-self:end;flex:none}
+.dots i{width:19px;height:19px;border-radius:50%;border:var(--bw) solid var(--ink);display:block}
+.dots i:nth-child(1){background:var(--yellow)}
+.dots i:nth-child(2){background:var(--pink)}
+.dots i:nth-child(3){background:var(--mint)}
+.win__body{flex:1;min-height:0;display:flex;flex-direction:column;padding:var(--s-lg) var(--s-xxl);
+  overflow:hidden;border-radius:0 0 calc(var(--r-lg) - 2px) calc(var(--r-lg) - 2px)}
+.win--fill .win__body{background:var(--accent)}
+.win__body.center{align-items:center;justify-content:center}
+.divider-title{flex:1;min-height:0;display:grid;place-items:center;width:100%}
+.win__body.divider{align-items:center;padding-bottom:var(--s-xxl)}
+.win__body.divider .caption{width:68%;font-size:46px}
+.win__body.tight{padding:var(--s-md) var(--s-lg)}
+.termblock{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s-xl);text-align:center}
+
+/* 눈썹 라벨 — 타이틀바 왼쪽. 지금 어느 챕터인지 늘 보인다 */
+.eyebrow{font-family:var(--font-label);font-size:25px;line-height:1.2;white-space:nowrap;
+  letter-spacing:.02em;background:var(--accent);border:2px solid var(--ink);color:var(--ink);
+  border-radius:var(--r-pill);padding:5px 20px;overflow:hidden;text-overflow:ellipsis}
+
+/* ========== 타이포 ==========
+   크기가 아니라 굵기로 위계를 만든다. 본문은 34px 아래로 내리지 않는다. */
+.big{font-family:var(--font-title);font-size:104px;line-height:1.05;text-align:center;letter-spacing:-.035em}
+.big.sm{font-size:84px} .big.xs{font-size:68px} .big.xxs{font-size:56px}
+.mid{font-family:var(--font-title);font-size:66px;line-height:1.3;text-align:center}
+.lead{font-size:42px;line-height:1.45;font-weight:500}
+.lead.center{text-align:center}
+b,strong{font-family:var(--font-title);font-weight:700}
+
+/* 알약 — 이 스타일의 서명. 글자색은 언제나 잉크. */
+.pill{display:inline-block;background:var(--orange);color:var(--ink);border-radius:var(--r-pill);
+  padding:12px var(--s-xl);font-family:var(--font-title);font-size:44px;line-height:1.25}
+.pill.lg{font-size:58px;padding:16px 40px}
+.pill.sm{font-size:34px;padding:8px 24px}
+.pill.pink{background:var(--pink)} .pill.mint{background:var(--mint)}
+.pill.yellow{background:var(--yellow)} .pill.purple{background:var(--purple)}
+.win__body>.pill{align-self:flex-start}
+.pillrow{display:flex;justify-content:center;margin-top:auto;padding-top:var(--s-md);flex:none}
+
+.goals{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:var(--s-xxl)}
+.goal{border-radius:var(--r-pill);padding:32px 48px;font-family:var(--font-title);font-size:46px;
+  line-height:1.3;text-align:center;color:var(--ink)}
+.goal:nth-child(1){background:var(--orange)}
+.goal:nth-child(2){background:var(--pink)}
+.goal:nth-child(3){background:var(--purple)}
+
+ul.bullets{list-style:none;display:flex;flex-direction:column;gap:var(--s-lg);justify-content:center;flex:1;min-height:0}
+ul.bullets li{font-size:42px;line-height:1.4;padding-left:52px;position:relative}
+ul.bullets li::before{content:"";position:absolute;left:0;top:.30em;width:28px;height:28px;
+  border:var(--bw) solid var(--ink);border-radius:var(--r-sm);background:var(--accent)}
+ol.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:var(--s-lg);flex:1;min-height:0;justify-content:center}
+ol.steps li{counter-increment:s;font-size:42px;line-height:1.4;padding-left:80px;position:relative}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:-4px;width:56px;height:56px;
+  display:grid;place-items:center;font-family:var(--font-title);font-size:32px;
+  border:var(--bw) solid var(--ink);border-radius:50%;background:var(--accent)}
+.caption{background:var(--bg);border:var(--bw) solid var(--ink);border-radius:var(--r-md);
+  padding:20px var(--s-xl);font-size:42px;font-family:var(--font-body);text-align:center;flex:none}
+
+/* ========== 카드 ========== */
+.cards{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:var(--s-lg);align-items:stretch}
+.card{border:var(--bw) solid var(--ink);border-radius:var(--r-lg);padding:var(--s-lg);display:flex;
+  flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px}
+.card h3{font-family:var(--font-title);font-size:40px;line-height:1.25}
+.card p{font-size:30px;line-height:1.45}
+.card:nth-child(1){background:var(--pink)}
+.card:nth-child(2){background:var(--orange)}
+.card:nth-child(3){background:var(--purple)}
+.card:nth-child(4){background:var(--mint)}
+
+/* ========== 미디어 / 콜아웃 ========== */
+.media{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+.media img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.media img:not(.framed){width:100%;height:100%}
+.media img.framed{border:var(--bw) solid var(--ink);border-radius:var(--r-md)}
+img.px{image-rendering:pixelated}
+.shot{position:relative;display:inline-block;max-width:100%;max-height:100%;line-height:0}
+.shot img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.gallery{flex:1;min-height:0;display:grid;gap:var(--s-md);align-items:center;justify-items:center;
+  grid-template-columns:repeat(var(--n,4),1fr)}
+.gallery img{width:100%;height:100%;object-fit:contain}
+.ring{position:absolute;border:5px solid var(--pink);border-radius:var(--r-lg);pointer-events:none}
+.tag{position:absolute;background:var(--pink);color:var(--ink);border-radius:var(--r-md);
+  padding:8px 24px;font-family:var(--font-title);font-size:34px;line-height:1.2;
+  text-align:center;pointer-events:none;white-space:nowrap;transform:translate(-50%,-50%)}
+.compare{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--n,3),1fr);
+  gap:20px;align-items:end;justify-items:center}
+.compare figure{display:flex;flex-direction:column;align-items:center;gap:var(--s-sm);height:100%;min-height:0;justify-content:flex-end}
+.compare img{width:100%;height:100%;object-fit:contain;min-height:0}
+
+/* ========== 표지 ========== */
+.shadowbox{position:relative;display:inline-block;max-width:100%}
+.shadowbox::before{content:"";position:absolute;inset:20px -10px -18px 10px;background:var(--green);
+  border:var(--bw) solid var(--ink);border-radius:var(--r-lg)}
+.shadowbox>*{position:relative;background:var(--yellow);border:var(--bw) solid var(--ink);
+  border-radius:var(--r-lg);padding:var(--s-xl) 40px}
+.lesson{font-family:var(--font-title);font-size:58px;line-height:1.2;text-align:center;color:var(--ink);
+  background:var(--white);border:var(--bw) solid var(--ink);border-radius:var(--r-pill);padding:12px 52px}
+.lesson em{font-style:normal;opacity:.55;margin-right:var(--s-sm)}
+
+/* ========== 장식 ========== */
+.sticker{position:absolute;z-index:5;pointer-events:none}
+.sticker svg{display:block;overflow:visible}
+.sticker path,.sticker circle,.sticker polygon,.sticker rect,.sticker ellipse{
+  stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;
+  vector-effect:non-scaling-stroke}
+.obj{position:absolute;z-index:4;pointer-events:none}
+.obj svg{display:block;overflow:visible}
+.obj path,.obj rect,.obj circle,.obj ellipse,.obj line{
+  stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;
+  vector-effect:non-scaling-stroke}
+.doodle{position:absolute;z-index:0;pointer-events:none}
+.doodle path{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+
+/* ========== 타이머 ========== */
+.timer{display:flex;align-items:center;gap:var(--s-md);justify-content:center;margin-top:auto;padding-top:var(--s-md);flex:none}
+.timer__face{font-family:var(--font-title);font-size:78px;min-width:220px;text-align:center;
+  background:var(--white);border:var(--bw) solid var(--ink);border-radius:var(--r-md);padding:4px 18px;
+  font-variant-numeric:tabular-nums}
+.timer button{font-family:var(--font-title);font-size:30px;min-height:48px;padding:10px var(--s-lg);cursor:pointer;
+  background:var(--yellow);border:var(--bw) solid var(--ink);border-radius:var(--r-pill);color:var(--ink)}
+.timer button:active{transform:translateY(2px)}
+.timer.is-done .timer__face{background:var(--pink);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{background:var(--white)}}
+
+/* ========== 화면 밖 조작 UI ========== */
+#hud{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:var(--s-sm);
+  padding:var(--s-xs) var(--s-md);color:#fff;font-size:14px;font-family:var(--font-label);
+  background:linear-gradient(transparent,rgba(0,0,0,.45));pointer-events:none;z-index:20}
+#hud .chapter{opacity:.75} #hud .count{margin-left:auto;opacity:.75}
+.navbtn{position:fixed;top:50%;transform:translateY(-50%);z-index:25;width:64px;height:96px;
+  border:none;border-radius:var(--r-md);background:rgba(255,255,255,.10);color:#fff;font-size:34px;
+  cursor:pointer;opacity:0;transition:opacity .2s}
+body:hover .navbtn{opacity:.5}
+.navbtn:hover{opacity:1!important;background:rgba(255,255,255,.22)}
+.navbtn:focus-visible{opacity:1;outline:3px solid #fff}
+#prev{left:10px} #next{right:10px}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:36vh;overflow:auto;padding:18px var(--s-lg) 34px;
+  background:#1c1714;color:#f6efe9;font-size:17px;line-height:1.65;display:none;z-index:22;border-top:2px solid #4a403a}
+body.show-notes #notes{display:block}
+#toc{position:fixed;inset:0;background:rgba(20,16,14,.96);display:none;z-index:40;padding:40px;overflow:auto}
+body.show-toc #toc{display:block}
+#toc h2{color:#fff;font-family:var(--font-label);font-size:26px;margin-bottom:20px;text-align:center}
+#toc ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;max-width:1100px;margin:0 auto}
+#toc button{width:100%;text-align:left;display:flex;gap:var(--s-sm);align-items:baseline;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-sm);
+  color:#f6efe9;font:inherit;font-size:16px;padding:12px 14px;min-height:44px}
+#toc button:hover,#toc button:focus-visible{background:rgba(255,255,255,.2);outline:none}
+#toc button .n{font-family:var(--font-label);opacity:.6;min-width:26px}
+#toc button .c{margin-left:auto;font-size:12px;opacity:.55}
+#help{position:fixed;inset:0;background:rgba(20,16,14,.95);color:#fff;display:none;
+  place-items:center;font-size:20px;line-height:2.1;z-index:45;text-align:center}
+body.show-help #help{display:grid}
+kbd{background:#3a322d;border-radius:6px;padding:3px 11px;font-family:inherit;font-size:.9em}
+
+@media print{
+  html,body{overflow:visible;background:#fff}
+  #hud,#notes,#help,#toc,#bar,.navbtn{display:none!important}
+  #stage{transform:none!important}
+  section{display:flex!important;position:relative;page-break-after:always;width:1280px;height:720px}
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="bar"></div>
+<section style="--accent:var(--pink)" data-chapter="표지" data-title="네모로 그리는 픽셀아트" data-notes="인사 → 오늘은 작은 네모로 그림을 그려 본다고 예고한다."><div class="win" style="border:none;background:none"><div class="win__bar" style="border:var(--bw) solid var(--ink);border-radius:var(--r-lg);padding-right:20px;margin:0 26px;display:flex"><h2 style="font-size:30px;text-align:right;flex:1">2026년 디지털 교육 프로그램</h2><div class="dots"><i></i><i></i><i></i></div></div><div style="flex:1;min-height:0;margin:var(--s-md) 26px 0;background:var(--pink);border:var(--bw) solid var(--ink);border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;padding:28px"><div class="shadowbox"><div class="big sm">드로잉 게임메이커<br>: 내가 만드는 디지털게임</div></div><div class="lesson"><em>1.</em>네모로 그리는 픽셀아트</div></div></div><span class="obj" style="top:34px;left:34px;transform:rotate(-20deg)"><svg width="76" height="214" viewBox="0 0 40 112"><rect x="9" y="2" width="22" height="14" rx="7" fill="#FFD4A8"/><rect x="9" y="15" width="22" height="7" fill="#EDE2FF"/><rect x="9" y="21" width="22" height="61" rx="3" fill="#D6BDF7"/><path d="M9 82h22l-8.5 22a2.6 2.6 0 0 1-5 0Z" fill="#FAE5A8"/><path d="M16.4 101.5h7.2l-2.1 5.5a1.6 1.6 0 0 1-3 0Z" fill="#152A20"/></svg></span><span class="obj" style="bottom:34px;left:32px"><svg width="88" height="129" viewBox="0 0 56 82"><rect x="3" y="3" width="50" height="76" rx="25" fill="#9CF0E5"/><path d="M28 5v26" fill="none"/><rect x="22.5" y="14" width="11" height="18" rx="5.5" fill="#D2FABB"/></svg></span><span class="obj" style="bottom:24px;right:6px;transform:rotate(-8deg)"><svg width="196" height="106" viewBox="0 0 140 76"><rect x="3" y="3" width="134" height="70" rx="12" fill="#FFD4A8"/><rect x="11" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="26" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="41" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="56" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="71" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="86" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="101" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="116" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="11" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="26" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="41" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="56" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="71" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="86" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="101" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="116" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="34" y="52" width="72" height="12" rx="5" fill="#FFF8F7"/></svg></span><span class="sticker" style="top:2px;left:236px;color:var(--orange)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="sticker" style="top:330px;right:2px;color:var(--purple)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span></section>
+<section style="--accent:var(--pink)" data-chapter="학습 목표" data-title="네모로 그리는 픽셀아트" data-notes="두 문장을 다 함께 소리 내어 읽는다."><div class="win"><div class="win__bar"><span class="barleft"></span><h1 class="">학습 목표</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="goals"><div class="goal">디지털 그림은 작은 네모로 되어 있어요.</div><div class="goal">칸 수에 따라 그림이 달라져요.</div></div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--mint)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span></section>
+<section style="--accent:var(--orange)" data-chapter="1. 픽셀이란" data-title="디지털 그림의 비밀" data-notes=""><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">디지털 그림의 비밀</div></div><div class="caption" style="width:64%">픽셀에 대해 알아봐요</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--green)"><svg width="74" height="74" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="currentColor"/><path d="M8.6 9.8v1.3M15.4 9.8v1.3" fill="none"/><path d="M8.8 14.2a4.2 4.2 0 0 0 6.4 0" fill="none"/></svg></span><span class="sticker" style="bottom:150px;right:-16px;color:var(--pink)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="doodle" style="left:-4px;top:330px"><svg width="116" height="196" viewBox="0 0 130 230"><path d="M118 4C70 26 6 40 22 74s76 6 66 44-64 26-58 62 60 30 82 46"/></svg></span></section>
+<section style="--accent:var(--orange)" data-chapter="1. 픽셀이란" data-title="픽셀이 뭘까요?" data-notes="화면에 눈을 가까이 대면 네모가 보인다고 이야기해 준다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">1. 픽셀이란</span></span><h1 class="">픽셀이 뭘까요?</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><span class="pill lg">픽셀 Pixel</span><p class="lead" style="margin-top:var(--s-xs)">그림을 이루는 작은 네모 한 칸</p><div class="media" style="margin-top:var(--s-md)"><img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAAEsCAIAAADcmZV8AAAIzUlEQVR4nO3dMW4USRiG4Qb5ChDjbASaU2y+GdLeYXLHE5NzByQyck4xsjSZc1/CG/QIjAG7a6a7v66u50l2hZbaUmuld/92i//Vw8NDBwDM63X6AgDQIgEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoCAV2/ev0vfAWLub+/SVwAaZQIGgICr/i+f958G/oaPHz8W/Qu+fv1a9M873/nznP/2w3XRyQDjMgEDQIAAA0CAAANAgAADQIAAA0CAAANAgAADQIAAA0CAAANAgAADQIAAA0CAAANAgAADQMBpG9LwHTL1br9xvvMBlsMEDAABV+kLAG2xiZk1ub+9O/v3CjAwE+mFxwQYmNyP9N7f3vV//3n/KXqjApvNpuu67XabvkiBw+HQdd3xeExfpEB1z/ny/6EUYGBCj9ObvQksjQADk5BeeJ4AAyOTXhhCgIHRSC8MJ8DACKQXSgkwcL7HH4JKLxQRYOAcRl64kAADZaQXRiHAwFDSCyMSYOBl0gujE2DgOdILEzkFePgW1dr3vzrf+b3d/qbo5AZJL0zKBAw8Jb0wAwEGfpJemI0AA10nvTA7AYbWSS9ECDC0S3ohSIChRdILcQIMbZFeWAgBhlZILyyKAMPK2RgIyyTAsFpGXlgyAYYVkl5YPgGGVZFeqIUAw0pIL9RFgKF60gs1EmComPRCvU4BHr5Ftd79r853/ppIL9TOBAyVkV5YBwGGakgvrIkAQwWkF9ZHgGHRpBfWSoBhoaQX1k2AYXGkF1ogwLAg0gvtEGDIszEQGiTAkGTkhWYJMGRILzROgGFu0gt0Agxzkl7gBwGGOUgv8IQAw7SkF/gjAYapSC/wjFOAh29RrX3/q/Od39vtb4pOLiK9wItMwDAm6QUGEmAYh/QCRQQYLiW9wBkEGM4nvcDZBBjOIb3AhQQYykgvMAoBhkFsDATGJcDwAiMvMAUBhr+SXmA6Agx/IL3A1AQYfiG9wDwEGE6kF5iTAIP0Bmw2m/QVyhwOh/QVilX3kLs6n/PZBJimSS+QIsC0Tnojtttt+gpD9TPZ8XhMX6RAP/tW9JC7Op/zhU4BHr5Ftd79r853/u/UF0h5nb4AALRIgAEgQIABIECAASBAgAEgQIABIECAASBAgAEgQIABIECAASBAgAEgQIABIECAASBAgAEgQIABIOC0D3j4FtXa97863/m93f6m6GSAcZmAASBAgAEgQIABIECAASBAgAEgQIABIECAASBAgAEgQIABIECAASBAgAEgQIABIECAASBAgAEgQIABIOC0D3j4FtV697863/kAy2ECBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAAAEGgIDTPuDhW1Rr3//qfOf3dvubopMBxmUCBoAAAQaAAAEGgAABBoAAAQaAAAEGgAABBoAAAQaAgKv0BYAWHQ6H9BXKbDab9BWKVfeQuzqf89kEGGCF/vnv3/QVin3/8i19hVkJMBBwPB7TVxiqn8m22236IgVqnH17dT3nC/kZMAAECDAABHgFDbByn/ef0lf4q5b3kpmAASDgNAEP36Ja7/5X5zsfYDlMwAAQIMAAECDAABAgwAAQIMAAECDAABAgwAAQIMAAECDAABAgwAAQIMAAECDAABAgwAAQIMAAECDAABBw2gc8fItq7ftfne/83m5/U3QywLhMwAAQIMAAECDAABAgwAAQIMAAECDAABAgwAAQIMAAECDAABAgwAAQIMAAECDAABAgwAAQIMAAECDAABBw2gc8fItqvftfne98gOUwAQNAgAADQIAAA0CAAANAgAADQIAAA0CAAANAgAADQIAAA0CAAANAgAADQIAA07S3H67TVwAaJcC07u2HaxkG5ifANO3+9u7+9q6TYWB2Agy/ZDh9F6AVp33Aw7eo1r7/1fnO7+32N09+5f727scc3PcYYDomYPjJG2lgNlfpC8DiPGmwaZja/f6+hyUwAcOfmYaBSQkwPMf3WcBEvIKGl/k+a3SbzSZ9hTKHwyF9hSY09ZwFGAbxg2Hq8v3Lt/QVeIEAQwEZHst2u01fYah+Jjsej+mLFOhfMFT0kLs6n/OF/AwYivk+C7icAMOZfJ8FXEKA4SJGYeA8AgyX8kYaOIMAwzhkGCgiwDAmGQYGEmAYn++zgBcJMEzFKAw84/QHcQzfolrv/lfnO39+/uAO4G9MwDA5PxgGfifAMBMZBh4TYJiV77OAngBDgFEYEGDI8EYaGifAkCTD0CwBhjwZhgYJMCyF77OgKQIMy2IUhkYIMCyON9LQAgGGhZJhWDcBhkWTYVgrAYYK+D4L1keAoRpGYVgTAYaaeCMNq3HaBzx8i2rt+1+d7/zebn9TdPKiWDMMK2AChlr5wTBUTYChbt5IQ6UEGKrnB8NQIwGGlZBhqIsAw6rIMNRCgGGFfJ8FyyfAsFpGYVgyAYY180YaFkuAYf1kGBZIgKEVMgyLIsDQFt9nwUIIMLTIKAxxAgyN8kYasgQYmibDkCLAgAxDwGkf8PAtqvXuf3W+83ne4wbbMQxTMwEDvzAKwzwEGHjKG2mYgQADfybDMCkBBp4jwzARAQZe5s/PgtEJMDCUURhGJMBAAW+kYSwCDBSTYbicAANnkmG4hAADF/F9FpxHgIERGIWhlAAD4/BGGooIMDAmGYaBXr15/y59B4ix82dSPwL8+Dn3v1jRkz8cDl3XHY/H9EUKbDabruu22236IgWqe867/U132X/JJmBgKr7Pgme8enh4SN8BWLnHo7AYsyaXTMACDMxEelkfAQaq8fbDdUU/AIbpCDAABPgICwACBBgAAgQYAAIEGAACBBgAAgQYAAIEGAACBBgAAgQYAAIEGAACBBgAAgQYAAIEGAACBBgAAgQYAAIEGAACBBgAAgQYAAL+Bze8I2V92tG7AAAAAElFTkSuQmCC" alt="체커보드를 확대해 네모 한 칸을 보여 주는 도해"></div></div></div></section>
+<section style="--accent:var(--orange)" data-chapter="1. 픽셀이란" data-title="어디에 픽셀이 있을까?" data-notes="교실에 있는 화면을 직접 가리키게 한다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">1. 픽셀이란</span></span><h1 class="">어디에 픽셀이 있을까?</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ul class="bullets"><li>교실 TV 화면</li><li>태블릿과 휴대폰 화면</li><li>사진기로 찍은 사진</li></ul><div class="pillrow"><span class="pill">또 어디에서 봤어요?</span></div></div></div></section>
+<section style="--accent:var(--pink)" data-chapter="2. 앱 익히기" data-title="직접 그려 봐요" data-notes=""><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">직접 그려 봐요</div></div><div class="caption" style="width:64%">픽셀 그리기 앱을 열어요</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--purple)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="doodle" style="right:-6px;top:262px"><svg width="116" height="186" viewBox="0 0 130 230"><path d="M12 4c48 22 112 36 96 70s-76 6-66 44 64 26 58 62-60 30-82 46"/></svg></span></section>
+<section style="--accent:var(--pink)" data-chapter="2. 앱 익히기" data-title="화면 살펴보기" data-notes="학생 태블릿도 같은 화면인지 확인한 뒤 넘어간다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">2. 앱 익히기</span></span><h1 class="">화면 살펴보기</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body tight"><div class="media"><span class="shot"><img class="framed" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAAHgCAIAAABy1jQJAAAhdElEQVR4nO3dfZBdZ33Y8We1K2Q7LAa/S3ZWNrY6IAxCY1ONUCUbqIdph9CWxjhjE5fpC8HEoTRM05JmkmGmM+50aBJn1JpmMp1OG2dsOg5mkoJLB1uxR1WEQTi2ES+WhOpasViQmGjdbFbSSv1jp+u7V7rHz3nu3fPbe8/n85d3/TxH55795zu/e889Y5/Y8SsJAAAirIo+AQAA2kuMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQZiL6BAAG5re/+q8Pf+f/pJTGJ8Z3//HX//Qr3yg4yNrrrrzhHdc99aU/rbvxwtdf+LO/9DPv3P62T//t3yj4dwHaSYwCo+P06fnf/qf/MaX0ugte9/H7Pnpy9uS+Xc/WPcjLP/jhyz/4YcG/fs+/+ei+x5/dtP1tBXsBWsvb9MAIOvlXJx/9/H9/z89uSyl97suf/fl/efutf3/b2uuu/PTOe37tP//yez+8PaX0G7//zy+58k0ppXs/949u/+QHU0ob3vnmf/jrdy5sWTjO57782Q/+k/f/s9/5+K/+p09t2n5jSmnyTa//+H0f/eWd9/yDf/Vz//aPlkxAf+/Xf3/XH+5u9oUCDD0xCoymIwePXn7NZSmlidUT33j8z3Y9svuWv/fuL/3uY7/1yc//zZ+7JaW0/+vfu2HTdWOrxsZWjV1zw7qU0oZNb/723u91HmRiYvyVv/jL3/rk53/31/7L7Z/8mZTShz7xgW8+/me/ee8Dzzz53JoLX9e5+MTxmeZeHsCoEKPAaFo1vmr+9HxK6eyZM9/9xgsppUc//+Urpy6/7c5bL/ypNSml/Xu/t2HTdeuuu+ql7//5qZOnLrhozQ2brtv/9SUxOrZqbM+Xv5FS+vGfH7/wpy5IKf21zW/+1q7nUkrP/a/vnJk/2/zrAhgxYhQYTde+9aePHDqaUpqfP3P2zNmU0j/+7EdSSrse2X3mzNmU0vefObT+LT/95hvXH3zu8A/2v7jhnW+eeN3EzE9e6TzI6VPzs6/MLvz3QniOT4wv/Lhq1djYWGOvBmBkiVFgBF00eeHf/YW/9T//YFfnL6fecs2+J55d/bqJidUTKaVTc6dOHJ95544bDz53+OCzh993x44XnjnUdZyzZ7tnn4ee/9/v+BsbU0qbtt+Y1ChA39xND4yOiYnxT93/Cyml8fFVX/2DP+mKyye/uOfT/+ETRw6+PPvK7MTqidOnTn/769/b9oG//n9P/OXh/S9e/45r/+j3/sdr/hOP/Ps/vvtXP3zLh979g2+/ePKvTi7XKwFojbFP7PiV6HMAGBo//5kPP/6Fp44cfHn9W6750C9+4Ld+6fPRZwQw3ExGAWr4kz/c/eFP/Z1Tc6cmVk88/JuPRp8OwNAzGQUAIIwbmAAACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAIMxF9AgAwrP7Ff/3F6FOAoTc2OzsXfQ4AMJSmp49OTU1FnwUMN2/TAwAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEEaMAgAQRowCABBGjAIAEGYi+gQAoC3uuuuum266aXx8/PTp0/v27Uspdf744IMPZq6BUSJGAaAh119//aZNm973vvft2rXrxIkTZ8+e7fwxfw2MEjEKAA259NJLV69efeDAgTe96U2XXHJJSqnrx8w1MEp8ZhQAmrNt27YvfelLmzZtOu+P+WtgZIhRAGjOk08+ecsttyx8GPTcH/PXwMgQowDQkGPHjp08efLmm28+duzY8ePHu37MXwOjxGdGAaAhBw8evPjii7/73e+ePn36wIEDKaWuHzPXwCgZm52diz4HABhK09NHp6amos8Chpu36QEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAjjcaAN2bNnd/QpAIW2bt0WfQoAI0uMNmfjxo3Rp1BucnIy+hT6MjMzE30KfXH9A+3fvz/6FABGmbfpAQAII0YBAAjjbXoAYEXYu3dv3S1btmxZjjOhSWIUAGhaQXfmH0ehDhcxCgA0YVABWusfEqYrnxgFAJZLYwGacwLCdGUSowDAgIU36HktnpUqXVHEKAAwGCuzQc+lSlcUMQoA9GtYMrTLwmlL0lhiFAAoN6QZ2kmSxhKjAECJEcjQTpI0ihgFAOoZsQztJEmbJ0YBgFwjnKGdJGmTxCgA8NpakqGdJGkzVkWfAACw0rWwRBe1+bU3w2QUAOhJiiUj0mUmRgGA82u4RAtqr8kz3Lt3rx5dDmIUAOjWQOQNJOzOPciynrkR6XIQowDAEsvXcw1kXOc/sUwvxIh0sMQoAPCq5Qi4qHRb/HcH/qL06ACJUQAgpWUotpWTa8tRpd6yHxRf7QQADLhEt2zZsjIrbeAn5tsG+idGAaDtBlhUKzZDOw32JPVon8QoALTaoFpqKDK00wBPWI/2Q4wCQHsNpKKGLkM7Derk9WgxMQoALdV/Pw11hnYayAvRo2XEKAC0UZ/lNDIZ2qn/F6VHC4hRAGid/kt0UGeyAunRholRAGgXJfqa9GiTxCgAtEg/nTSSb8330ueL1aP5xCgAtEWfJTrAMxkWerQBYhQAWkGJltGjy82z6QGAntqcoYsWLoKyXCYmowAw+spCSol2KrsaEvY1iVEAGHFKdFD06HIQowAwypToYOnRgROjAMASSrSa6zNYYhQARlbBQE5p5Si4SoajvYhRABhNSnRZ6dFBEaMAAIQRowAwgoxFG2A4OhBiFABGjRJtjB7tnxgFgLZTov1w9fokRgFgpBi8rXz+Rp3EKAC0msFe/1zDfohRABgddUduKmpQ6l5Jw9FFYhQAWkqJDpbrWUaMAsCIMGwbLv5eC8QoALSRMd5ycFULiFEAGAXGbMPIXy2JUQBoIQO85ePa1iVGAWDoGbANL387MQoA7WJ0t9xc4VrEKAAMN6O1Ydfyv6AYBYAWMbRrhuucT4wCABBGjALAEKv1Dq9xXZNqXe02v1MvRgEACCNGAaAVjEWb55rnEKMAMKza/N7u6GntX1OMAgAQRowCwOjzfnEUV/41TUSfQItMTk5Gn0K5mZmZ6FPoy1Bf/OT6AzC6TEYBYCi19iOGI6ydf1MxCgAjzjvFsVz/amIUAIAwYhQAgDBiFACGTzs/XNgGLfzLilEAGGU+sLgS+CtUEKMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjADBk8r/9x03cK0f+36Jt3+4kRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAWDIbNmyJXPl3r17l/VMyJf/t8j/+44GMQoAQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAKPMDfUrgb9CBTEKAMOnbd/+0x4t/MuKUQAAwohRAADCiFEAGHE+sBjL9a8mRgFgKLXww4Ujr51/UzEKAEAYMQoAo887xVFc+dckRgEACCNGAWBYtfMjhqOqtX9NMQoAreD94ua55jnEKAAAYcQoAAyxWu/tGtQ1qdbVbu179EmMAgAQSIwCQIsYjjbDdc4nRgFguLX5Hd7R0PK/oBgFgHYxtFturnAtYhQAhl7LR2tDzd9OjAJA6xjdLR/Xti4xCgCjwIBtGPmrJTEKAO1kgLccXNUCYhQARoQx23Dx91ogRgGgpYzxBsv1LCNGAWB01B226adBqXsljUUXiVEAaDU92j/XsB9iFABGipHbyudv1EmMAkDbGez1w9XrkxgFgFFTMHhTVGUKrpuxaBcxCgAjSI82QIkOxET0CbTIzMxM9CmUm5ycjD6Fvgz1xU+uPwCjy2QUAEaT4eiyMhYdFDEKACNLjy4TJTpAYhQAWEKPVnN9BkuMAsAoKxvI6a1eyq6MsWgFMQoAI06PDooSXQ5iFABGnx7tnxJdJr7aCQDoaaHAWl5UonxZmYwCQCv0E5RtrrF+XnvLIz6TGAWAttCjdSnRBohRAGiRPnu0PUna54tVovnEKAC0S5+d1IYe7fM1KtFaxCgAtI4eraBEGyZGAaCN+u/R0UvS/l+UEi0gRgGgpfovp5FJ0oG8ECVaRowCQHsNpJ+GOkkHdfJKtJgYBYBWG1RFDV2SDvCElWg/xCgAtN0AW2ooknSwJ6lE+yRGAYABF9WKTdKBn5gS7Z9n0wMAKf3/rhpgqy0eKrzYlqOMw1/UyBCjAMCrtmzZMvB0i6rS5ZvOKtEBEqMAwBLL0aMLOg+7TD3XwMcDlOhgiVEAoNvA37I/17kHL4i8hj+ZKkOXgxgFAM5v+Uak57Uy73lapESXiRgFAHpqYES68snQZeWrnQCA19DmGmvza2+GySgA8NpaOCKVoc0QowBArpYkqQxtkhgFAOoZ4SSVoc0TowBAiRFLUhkaRYwCAOVGIEllaCwxCgD0a0iTVIauBGIUABiMxbZb4VWqQVcUMQoADNjKrFINujKJUQBguXT2X0iYCtCVT4wCAE1oLEwF6HARowBA087biwWFqjtHgBgFAFYEZdlOq6JPAACA9hKjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAISZiD4BAGiR+++//6qrrhobGztz5sytt9561VVXpZSee+65r33tax/72McuuuiilNLOnTvvvffec3ct/PcNN9zwhje8Yd++fSmlI0eOXH311SmltWvXvvzyy52/2bx581e+8pXOXTfddFNzrxOyiVEAaM74+Pgdd9yRUvrxj3/82GOPfeQjH0kpHTx4cPPmzYcOHbrxxhurdy3asGFDSmnnzp1dv+/8zVe/+tWu/wsrkLfpASDAZZddduLEiZTSqVOnTp069fa3v/3QoUPRJwUBxCgABHjxxRcvv/zylNLhw4evu+66Sy655MSJE/Pz89HnBU3zNj0ANGd+fv7hhx9OKa1Zs+b9739/SungwYPT09Pf//73X3nllZdeemn9+vUVu1JK27dvX7duXa1/q9YuaJgYBYDmdH368+zZsz/5yU/uvvvulNLhw4cPHTp03hg99zOjBf8WrEzepgeAMEeOHFl4sz6ldPXVVx8+fDj0dCCAySgAhDlw4MDU1NTCf69evfqiiy46fvz4/Pz8Qw89tPDLdevW7dixo/MN93Xr1m3fvj3n4GW7oGFjs7Nz0efQCnv27N6yZUv0WZSbmZmJPoW+TE5ORp9CX1z/QHv37t26dVv0WbBCTU8fXUxJoIy36QEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAII0YBAAgjRgEACDMRfQIA0GpjY2OdP549e7afox1861s7f7z+O9/p52h/8cCSo118T39HO7h9ydGuf6qfo33mubs6f7zv7Q/2c7TtTzzQ+eNT77mnr6M98PKSo92ztp+j/bu7Dnb++OkHr+/naC/f9d86f1z74O39HO0zn/lM54/33XdfwUHGZmfn+jkJMu3Zs3vLli3RZ1FuZmYm+hT6Mjk5GX0KfXH9A+3du3fr1m3RZ8EKNT19dGpqqnh7V4Z2KkjSrgztVJCkXRnaqSBJuzJ0ydHqJ2lXhnYqSNKuDO1UkKRdGbrkaPWTtCtDOxUkaVeGdipI0q4M7VQ3ScVoQ8RorKGOoeT6hxKjVCiO0YoM7ZSZpBUZ2ikzSSsytFNmklZk6JKj5SVpRYZ2ykzSigztlJmkFRm65Gh5SVqRoZ0yk7QiQztlJmlFhnbKT1KfGQWARmWWaObKzBLNXJlZopkrM0s0c2VmiWauzCzRzJWZJZq5MrNEM1dmlmjmyswSrbVSjAIAEEaMAkBz8seiOevzx6I56/PHojnr88eiOevzx6I56/PHojnr88eiOevzx6I56/PHojnr84edtdaLUQAAwohRAGhI3bFo9a66Y9HqXXXHotW76o5Fq3fVHYtW76o7Fq3eVXcsWr2r7li0elfdsWj1rrpj0fxdYhQAgDBiFACAMGIUAIAwYhQAgDBiFAAaUvbc+V67yp4732tX2XPne+0qe+58r11lz53vtavsufO9dpU9d77XrrLnzvfaVfbc+V67yp47n7NLjAIAEEaMAkBz6g5Hq9fXHY5Wr687HK1eX3c4Wr2+7nC0en3d4Wj1+rrD0er1dYej1evrDker19cdjmauF6MAAIQRowDQqPzhaM7K/OFozsr84WjOyvzhaM7K/OFozsr84WjOyvzhaM7K/OFozsr84WjOyvzhaP7KsdnZucyl9GPPnt1btmyJPotyMzMz0afQl8nJyehT6IvrH2jv3r1bt26LPgtWqOnpo1NTU8XbKx7IVHCrU8UDmQpudap4IFPBrU4VD2QquNWp4oFMBbc6VTyQqeBWp4oHMhXc6lTxQKaCW50qHshUcKtTxaOV6r6bL0YbIkZjDXUMJdc/lBilQp8xuqArScvuuF/UlaRld9wv6krSsjvuXz3a0iQtu+N+UVeSlt1xv6grScvuuH/1aEuTtOyO+0VdSVp2x/2iriQtu+N+UVeSlt1xL0YbIkZjDXUMJdc/lBilwkBiFFrOZ0YBAAgjRgEACCNGAQAII0YBAAgjRgEACCNGAQAIMxF9AgDQar5ntIzvGS3je0bby/eMxhrq77lMrn8o3zNKBU9gyj2aJzB5AlNvYrQhYjTWUMdQcv1DiVEqFMdoRYZ2ykzSigztlJmkFRnaKTNJKzJ0ydHykrQiQztlJmlFhnbKTNKKDF1ytLwkrcjQTplJWpGhnTKTtCJDO+Unqc+MAkCjMks0c2VmiWauzCzRzJWZJZq5MrNEM1dmlmjmyswSzVyZWaKZKzNLNHNlZonWWilGAQAII0YBoDn5Y9Gc9flj0Zz1+WPRnPX5Y9Gc9flj0Zz1+WPRnPX5Y9Gc9flj0Zz1+WPRnPX5w85a68UoAABhxCgANKTuWLR6V92xaPWuumPR6l11x6LVu+qORat31R2LVu+qOxat3lV3LFq9q+5YtHpX3bFo/i4xCgBAGDEKAEAYMQoAQBgxCgBAGDEKAA0pe+58r11lz53vtavsufO9dpU9d77XrrLnzvfaVfbc+V67yp4732tX2XPne+0qe+58r11lz53P2SVGAQAII0YBoDl1h6PV6+sOR6vX1x2OVq+vOxytXl93OFq9vu5wtHp93eFo9fq6w9Hq9XWHo9Xr6w5HM9eLUQAAwohRAGhU/nA0Z2X+cDRnZf5wNGdl/nA0Z2X+cDRnZf5wNGdl/nA0Z2X+cDRnZf5wNGdl/nA0f+XY7Oxc5lL6sWfP7i1btkSfRbmZmZnoU+jL5ORk9Cn0xfUPtHfv3q1bt0WfBSvU9PTRqamp4u0VD2QquNWp4oFMBbc6VTyQqeBWp4oHMhXc6lTxQKaCW50qHshUcKtTxQOZCm51qnggU8GtThUPZCq41ani0Up1380Xow0Ro7GGOoaS6x9KjFKhzxhd0JWkZXfcL+pK0rI77hd1JWnZHfevHm1pkpbdcb+oK0nL7rhf1JWkZXfcv3q0pUladsf9oq4kLbvjflFXkpbdcb+oK0nL7rgXow0Ro7GGOoaS6x9KjFJhIDEKLeczowAAhBGjAACEEaMAAIQRowAAhJmIPoEWGep7UIb6BpQ05Bc/uf4AjC6TUQAAwpiMAkAk3zNaxveMlvE9o+21Z8/ujRs3Rp9FOW8Tx3L9A+3fv9/3jNKLJzDlHs0TmDyBqTcx2hAxGmuoYyi5/qHEKBWKY7QiQztlJmlFhnbKTNKKDO2UmaQVGbrkaHlJWpGhnTKTtCJDO2UmaUWGLjlaXpJWZGinzCStyNBOmUlakaGd8pPUZ0YBoFGZJZq5MrNEM1dmlmjmyswSzVyZWaKZKzNLNHNlZolmrsws0cyVmSWauTKzRGutFKMAAIQRowDQnPyxaM76/LFozvr8sWjO+vyxaM76/LFozvr8sWjO+vyxaM76/LFozvr8sWjO+vxhZ631YhQAgDBiFAAaUncsWr2r7li0elfdsWj1rrpj0epddcei1bvqjkWrd9Udi1bvqjsWrd5VdyxavavuWDR/lxgFACCMGAUAIIwYBQAgjBgFACCMGAWAhpQ9d77XrrLnzvfaVfbc+V67yp4732tX2XPne+0qe+58r11lz53vtavsufO9dpU9d77XrrLnzufsEqMAAIQRowDQnLrD0er1dYej1evrDker19cdjlavrzscrV5fdzhavb7ucLR6fd3haPX6usPR6vV1h6OZ68UoAABhxCgANCp/OJqzMn84mrMyfziaszJ/OJqzMn84mrMyfziaszJ/OJqzMn84mrMyfziaszJ/OJq/cmx2di5zKf3Ys2f3xo0bo8+i3OTkZPQp9GVmZib6FPri+gfav3//1q3bos+CFWp6+ujU1FTx9ooHMhXc6lTxQKaCW50qHshUcKtTxQOZCm51qnggU8GtThUPZCq41anigUwFtzpVPJCp4FanigcyFdzqVPFopbrv5ovRhojRWEMdQ8n1DyVGqdBnjC7oStKyO+4XdSVp2R33i7qStOyO+1ePtjRJy+64X9SVpGV33C/qStKyO+5fPdrSJC27435RV5KW3XG/qCtJy+64X9SVpGV33IvRhojRWEMdQ8n1DyVGqTCQGIWW85lRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwkxEnwAAtJrvGS3je0bL+J7R9vI9o7GG+nsuk+sfyveMUsETmHKP5glMnsDUmxhtiBiNNdQxlFz/UGKUCsUxWpGhnTKTtCJDO2UmaUWGdspM0ooMXXK0vCStyNBOmUlakaGdMpO0IkOXHC0vSSsytFNmklZkaKfMJK3I0E75SeozowDQqMwSzVyZWaKZKzNLNHNlZolmrsws0cyVmSWauTKzRDNXZpZo5srMEs1cmVmitVaKUQAAwohRAGhO/lg0Z33+WDRnff5YNGd9/lg0Z33+WDRnff5YNGd9/lg0Z33+WDRnff5YNGd9/rCz1noxCgBAGDEKAA2pOxat3lV3LFq9q+5YtHpX3bFo9a66Y9HqXXXHotW76o5Fq3fVHYtW76o7Fq3eVXcsmr9LjAIAEEaMAgAQRowCABBGjAIAEEaMAkBDyp4732tX2XPne+0qe+58r11lz53vtavsufO9dpU9d77XrrLnzvfaVfbc+V67yp4732tX2XPnc3aJUQAAwohRAGhO3eFo9fq6w9Hq9XWHo9Xr6w5Hq9fXHY5Wr687HK1eX3c4Wr2+7nC0en3d4Wj1+rrD0cz1YhQAgDBiFAAalT8czVmZPxzNWZk/HM1ZmT8czVmZPxzNWZk/HM1ZmT8czVmZPxzNWZk/HM1ZmT8czV85Njs7l7mUfuzZs3vjxo3RZ1FucnIy+hT6MjMzE30KfXH9A+3fv3/r1m3RZ8EKNT19dGpqqnh7xQOZCm51qnggU8GtThUPZCq41anigUwFtzpVPJCp4FanigcyFdzqVPFApoJbnSoeyFRwq1PFA5kKbnWqeLRS3XfzxWhDxGisoY6h5PqHEqNU6DNGF3Qladkd94u6krTsjvtFXUladsf9q0dbmqRld9wv6krSsjvuF3Uladkd968ebWmSlt1xv6grScvuuF/UlaRld9wv6krSsjvuxWhDxGisoY6h5PqHEqNUGEiMQsv5zCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhJqJPoEX2798ffQoAACuLGG3I1q3bok8BAGDF8TY9AABhTEYBoCEvvPDCvn37UkpHjhy5+uqrU0qbN28+efLkM888s2rVqjNnzmzevPltb3tbSun5558/95c7d+689957Ow94//33X3XVVSmlkydPvvvd777++uvP3Xj48OFnn332gx/8YErp2LFjjz322J133jk2Ntb8y4fzEqMA0JANGzZs2LAhpbRz58477rgjpXT48OF9+/bdfvvta9asmZub++IXv/j617/+7Nmzzz//fNcv169ff+4Bx8fHF47zox/96NFHHx0fHz9347XXXvutb33rpZdeuuaaa5544on3vve9SpQVxdv0ABDm6aef3rFjx5o1a1JKa9as2bFjx9NPP33eX1Yf5/LLLx8bG+u18ZZbbnnyySdfeOGFN7zhDWvXrl3+lwU1iFEACHP8+PErrrhi8ccrrrji2LFj5/1l9XFefPHF97znPb02XnLJJWvXrn3iiSe2b98+6FcA/fI2PQAMq/n5+Ycffnh+fv7o0aNTU1MVK0+ePLlq1apTp05deOGFjZ0e5DAZBYAwl1566fT09OKPP/zhDy+77LLz/vK82xc+M3rnnXfefffdR48e7bXxyJEjc3Nzt9122+OPP75sLwUKiVEACHPzzTc/+eSTc3NzKaW5ubmnnnrqXe9613l/WX2cCy644I1vfON5N545c2bXrl233HLL+vXrV61adeDAgQZeF+TzNj0AhLn22mtfeeWVL3zhC+Pj4wtfxrTwbvt5fzk/P//QQw8tbFy3bt2OHTsW3qZfuDv+tttuu/LKK8/d+M1vfnP9+vUXX3xxSunWW2995JFH1q9fv3r16rgXDUuMzc7ORZ8DAAyl6enX+KQm8Jq8TQ8AQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAEAYMQoAQJiJ6BMAgDZ64IEHlvufuOeee5zDsJxDm5mMAgAQxmQUAMIs08Cs1qjPOaycc2gnk1EAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMJMRJ8AALTXAw88EH0KzmEFnUM7mYwCABBmbHZ2LvocAGAoTU8fnZqaij4LGG4mowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhPl/0TAOsLE/jIUAAAAASUVORK5CYII=" alt="픽셀 그리기 앱 화면"><span class="ring" style="left:12%;top:15%;width:37%;height:68%"></span><span class="tag" style="left:30%;top:92%">캔버스</span><span class="ring" style="left:67%;top:11%;width:31%;height:80%"></span><span class="tag" style="left:82%;top:4%">색과 도구</span></span></div></div></div></section>
+<section style="--accent:var(--pink)" data-chapter="2. 앱 익히기" data-title="칸을 5칸으로" data-notes="숫자를 잘못 넣으면 뒤로 갔다 다시 오면 된다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">2. 앱 익히기</span></span><h1 class="">칸을 5칸으로</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body tight"><div class="media"><span class="shot"><img class="framed" src="data:image/png;base64,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mT8czVmZPxzNWZk/HM1ZmT8czV85Njs7l7mUfuzZs3vjxo3RZ1FucnIy+hT6MjMzE30KfXH9A+3fv3/r1m3RZ8EKNT19dGpqqnh7xQOZCm51qnggU8GtThUPZCq41anigUwFtzpVPJCp4FanigcyFdzqVPFApoJbnSoeyFRwq1PFA5kKbnWqeLRS3XfzxWhDxGisoY6h5PqHEqNU6DNGF3Qladkd94u6krTsjvtFXUladsf9q0dbmqRld9wv6krSsjvuF3Uladkd968ebWmSlt1xv6grScvuuF/UlaRld9wv6krSsjvuxWhDxGisoY6h5PqHEqNUGEiMQsv5zCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhxCgAAGHEKAAAYcQoAABhJqJPoEX2798ffQoAACuLGG3I1q3bok8BAGDF8TY9AABhTEYBoCEvvPDCvn37UkpHjhy5+uqrU0qbN28+efLkM888s2rVqjNnzmzevPltb3tbSun5558/95c7d+689957Ow94//33X3XVVSmlkydPvvvd777++uvP3Xj48OFnn332gx/8YErp2LFjjz322J133jk2Ntb8y4fzEqMA0JANGzZs2LAhpbRz58477rgjpXT48OF9+/bdfvvta9asmZub++IXv/j617/+7Nmzzz//fNcv169ff+4Bx8fHF47zox/96NFHHx0fHz9347XXXvutb33rpZdeuuaaa5544on3vve9SpQVxdv0ABDm6aef3rFjx5o1a1JKa9as2bFjx9NPP33eX1Yf5/LLLx8bG+u18ZZbbnnyySdfeOGFN7zhDWvXrl3+lwU1iFEACHP8+PErrrhi8ccrrrji2LFj5/1l9XFefPHF97znPb02XnLJJWvXrn3iiSe2b98+6FcA/fI2PQAMq/n5+Ycffnh+fv7o0aNTU1MVK0+ePLlq1apTp05deOGFjZ0e5DAZBYAwl1566fT09OKPP/zhDy+77LLz/vK82xc+M3rnnXfefffdR48e7bXxyJEjc3Nzt9122+OPP75sLwUKiVEACHPzzTc/+eSTc3NzKaW5ubmnnnrqXe9613l/WX2cCy644I1vfON5N545c2bXrl233HLL+vXrV61adeDAgQZeF+TzNj0AhLn22mtfeeWVL3zhC+Pj4wtfxrTwbvt5fzk/P//QQw8tbFy3bt2OHTsW3qZfuDv+tttuu/LKK8/d+M1vfnP9+vUXX3xxSunWW2995JFH1q9fv3r16rgXDUuMzc7ORZ8DAAyl6enX+KQm8Jq8TQ8AQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAEAYMQoAQBgxCgBAGDEKAEAYMQoAQJiJ6BMAgDZ64IEHlvufuOeee5zDsJxDm5mMAgAQxmQUAMIs08Cs1qjPOaycc2gnk1EAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMKIUQAAwohRAADCiFEAAMJMRJ8AALTXAw88EH0KzmEFnUM7mYwCABBmbHZ2LvocAGAoTU8fnZqaij4LGG4mowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhBGjAACEEaMAAIQRowAAhPl/0TAOsLE/jIUAAAAASUVORK5CYII=" alt="캔버스 크기를 정하는 화면"><span class="ring" style="left:12%;top:15%;width:37%;height:68%"></span><span class="tag" style="left:30%;top:92%">여기가 5칸 X 5칸</span></span></div></div></div></section>
+<section style="--accent:var(--yellow)" data-chapter="2. 앱 익히기" data-title="5칸에 하트 그리기" data-notes="색이 안 칠해지는 학생을 먼저 돕는다. 다 한 학생은 색을 바꿔 보게 한다." data-timer="12"><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">2. 앱 익히기</span></span><h1 class="">5칸에 하트 그리기</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ol class="steps"><li>색깔을 하나 고른다</li><li>칸을 하나씩 칠한다</li><li>하트가 되면 손을 든다</li></ol><div class="timer"><div class="timer__face">12:00</div><button type="button">시작</button></div></div></div></section>
+<section style="--accent:var(--purple)" data-chapter="3. 칸 늘리기" data-title="칸을 늘려 볼까?" data-notes=""><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">칸을 늘려 볼까?</div></div><div class="caption" style="width:64%">16칸, 32칸으로 다시 그려요</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--yellow)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span><span class="doodle" style="right:-6px;top:262px"><svg width="116" height="186" viewBox="0 0 130 230"><path d="M12 4c48 22 112 36 96 70s-76 6-66 44 64 26 58 62-60 30-82 46"/></svg></span></section>
+<section style="--accent:var(--purple)" data-chapter="3. 칸 늘리기" data-title="칸이 많아지면
+하트가 어떻게 달라질까요?" data-notes="예상 답변: 더 예뻐진다 / 더 오래 걸린다 / 더 진짜 같다"><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class="">생각해 봐요</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body center"><div class="mid">칸이 많아지면<br>하트가 어떻게 달라질까요?</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--pink)"><svg width="74" height="74" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="currentColor"/><path d="M8.6 9.8v1.3M15.4 9.8v1.3" fill="none"/><path d="M8.8 14.2a4.2 4.2 0 0 0 6.4 0" fill="none"/></svg></span><span class="sticker" style="bottom:150px;right:-16px;color:var(--orange)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="doodle" style="left:-4px;top:330px"><svg width="116" height="196" viewBox="0 0 130 230"><path d="M118 4C70 26 6 40 22 74s76 6 66 44-64 26-58 62 60 30 82 46"/></svg></span></section>
+<section style="--accent:var(--yellow)" data-chapter="3. 칸 늘리기" data-title="32칸으로 다시 그리기" data-notes="저장까지 마친 학생만 다음으로 넘어가게 한다." data-timer="10"><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">3. 칸 늘리기</span></span><h1 class="">32칸으로 다시 그리기</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ol class="steps"><li>새 그림을 32칸으로 만든다</li><li>같은 하트를 다시 그린다</li><li>갤러리에 저장한다</li></ol><div class="timer"><div class="timer__face">10:00</div><button type="button">시작</button></div></div></div></section>
+<section style="--accent:var(--purple)" data-chapter="3. 칸 늘리기" data-title="무엇이 달라졌나요?" data-notes="학생 작품 세 개를 실제로 띄워 비교하면 더 좋다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">3. 칸 늘리기</span></span><h1 class="">무엇이 달라졌나요?</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="compare" style="--n:3"><figure><img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAIAAAD2HxkiAAADhElEQVR4nO3VUQ3CQBQFUUp1UVeYoK6qi2bRsD8MpOcouHnJ5C1jjNu/Obe9njBtPZ71hGnu/B33egBcnQghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiC3vx6veAJfmE0JMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHERAgxEUJMhBATIcRECDERQkyEEBMhxEQIMRFCTIQQEyHEljFGvWHaue31BH7UejzrCdN8QoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoTYB3hcExPh3J4aAAAAAElFTkSuQmCC" alt="5칸 하트"><span class="pill pink sm">5 X 5</span></figure><figure><img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATAAAAEwCAIAAAC/mbqkAAAED0lEQVR4nO3csW3CUBhG0ThkrbAVS4StmCvopYmUKhRPYF/wOb1lS9bV333LGOMNaHjf+gOAP4KEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChJCPrT9gDdfjee7Bw+V03y/hze+4yYWEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQsgyxlj5ldMLDnuw/kqF33HD+r/DhYQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCyPyEh+kH+M/09ocLCSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoSQ5fvza+tvAH65kBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoSQZYwx9+T1eL7vp8DLOFxOcw+6kBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIcsYY+VXXo/nld8Icw6X08pvdCEhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQELLBhMc02x/MWX+JY5oLCSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoSQZ5rwmGb74zU80RLHNBcSQgQJIYKEEEFCiCAhRJAQIkgIESSECBJCBAkhgoQQQUKIICFEkBAiSAgRJIQIEkIECSG7mPCYZvvjEfawxDHNhYQQQUKIICFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiAmPh9jD9ocljkdwISFEkBAiSAgRJIQIEkIECSGChBBBQoggIUSQECJICBEkhAgSQgQJIYKEEEFCiCAhRJAQ8gMG10ABhevOiwAAAABJRU5ErkJggg==" alt="16칸 하트"><span class="pill pink sm">16 X 16</span></figure><figure><img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAEg0lEQVR4nO3dQU7bYBRG0aZ0W2VXbKLsinUVuQOGqA+IFf++4ZxpBrEUXb3JJ+eybdsPoOnn6gcAridgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYb9WP8A1Xh+fVz/Clz28PK1+hEP5jY7hAkOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ9hl27YlX1xc6qyyaiHkN/q8Vb+RCwxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGE3XGLZ8cCb2+20XGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAjbtcSytYL99uy0XGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAj7YIllawVrzTstFxjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCHs8vf3n9XPAFzJBYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIeyybdvw8evj82GPArz38PI0fOoCQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhH3w74Qz/10I+83/PzhzgSFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAI2/VOrJk3ZsGbPW+9mrnAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMITd8J1YM2/M4p7c7q1XMxcYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCli2xZnZanM2qrdXMBYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChrCTLrFmdlrcwjm3VjMXGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwpJLrJmdFv9T3FrNXGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAi7wyXWzE7rvt3f1mrmAkOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ9i3W2LN7LTO77ttrWYuMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhFlifYGd1jFsrT7PBYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjBLrIN8txWXNdUxXGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAizxDqF4k7L1uoMXGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAj7B6LdcAELOSqUAAAAAElFTkSuQmCC" alt="32칸 하트"><span class="pill pink sm">32 X 32</span></figure></div><div class="pillrow"><span class="pill pink">칸이 많을수록 더 부드러워요</span></div></div></div></section>
+<section style="--accent:var(--mint)" data-chapter="4. 공유" data-title="내 그림을 자랑해요" data-notes="두세 명만 앞에 나와 빈칸을 채워 발표한다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">4. 공유</span></span><h1 class="">내 그림을 자랑해요</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="media"><img class="px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAEg0lEQVR4nO3dQU7bYBRG0aZ0W2VXbKLsinUVuQOGqA+IFf++4ZxpBrEUXb3JJ+eybdsPoOnn6gcAridgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYb9WP8A1Xh+fVz/Clz28PK1+hEP5jY7hAkOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ9hl27YlX1xc6qyyaiHkN/q8Vb+RCwxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGE3XGLZ8cCb2+20XGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAjbtcSytYL99uy0XGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAj7YIllawVrzTstFxjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCHs8vf3n9XPAFzJBYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIeyybdvw8evj82GPArz38PI0fOoCQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhH3w74Qz/10I+83/PzhzgSFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAI2/VOrJk3ZsGbPW+9mrnAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMITd8J1YM2/M4p7c7q1XMxcYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCli2xZnZanM2qrdXMBYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChrCTLrFmdlrcwjm3VjMXGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwpJLrJmdFv9T3FrNXGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAi7wyXWzE7rvt3f1mrmAkOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ9i3W2LN7LTO77ttrWYuMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhFlifYGd1jFsrT7PBYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjBLrIN8txWXNdUxXGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAizxDqF4k7L1uoMXGAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAj7B6LdcAELOSqUAAAAAElFTkSuQmCC" alt="학생 작품 예시"></div><div class="pillrow"><span class="pill">내 그림은 ______ 칸이에요!</span></div></div></div></section>
+<section style="--accent:var(--mint)" data-chapter="4. 공유" data-title="네모로 그리는 픽셀아트" data-notes="태블릿 정리 안내 후 다음 차시 예고."><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">참 잘했어요</div></div><div class="caption">2. 픽셀아트로 캐릭터 만들기</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--purple)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="sticker" style="bottom:172px;left:-12px;color:var(--yellow)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span><span class="doodle" style="left:-4px;top:330px"><svg width="116" height="196" viewBox="0 0 130 230"><path d="M118 4C70 26 6 40 22 74s76 6 66 44-64 26-58 62 60 30 82 46"/></svg></span></section>
+</div>
+
+<button class="navbtn" id="prev" aria-label="이전 슬라이드">‹</button>
+<button class="navbtn" id="next" aria-label="다음 슬라이드">›</button>
+
+<div id="hud"><span class="chapter"></span><span class="count"></span></div>
+<div id="notes"></div>
+<div id="toc"><h2>목차 — 눌러서 이동 (O 키로 닫기)</h2><ol></ol></div>
+<div id="help"><div>
+  <kbd>→</kbd> <kbd>Space</kbd> 다음 &nbsp; <kbd>←</kbd> 이전<br>
+  <kbd>O</kbd> 목차 &nbsp; <kbd>N</kbd> 발표자 노트 &nbsp; <kbd>F</kbd> 전체화면<br>
+  <kbd>B</kbd> 화면 가리기 &nbsp; <kbd>Home</kbd> 처음으로<br>
+  <kbd>?</kbd> 또는 <kbd>Esc</kbd> 닫기
+</div></div>
+
+<script>
+(function(){
+  const stage=document.getElementById('stage');
+  const slides=[...stage.querySelectorAll('section')];
+  const hudC=document.querySelector('#hud .chapter'), hudN=document.querySelector('#hud .count');
+  const notes=document.getElementById('notes'), bar=document.getElementById('bar');
+  let i=0, blank=false;
+
+  function fit(){ stage.style.transform='scale('+Math.min(innerWidth/1280,innerHeight/720)+')'; }
+  addEventListener('resize',fit); fit();
+
+  const tocList=document.querySelector('#toc ol');
+  slides.forEach((s,k)=>{
+    const t=s.dataset.title||s.querySelector('h1,h2,.big,.mid')?.textContent.trim()||'슬라이드';
+    const li=document.createElement('li');
+    li.innerHTML='<button><span class="n">'+(k+1)+'</span><span>'+t+'</span>'+
+      (s.dataset.chapter?'<span class="c">'+s.dataset.chapter+'</span>':'')+'</button>';
+    li.querySelector('button').onclick=()=>{show(k);document.body.classList.remove('show-toc')};
+    tocList.appendChild(li);
+  });
+
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('is-active',k===i));
+    const s=slides[i];
+    hudC.textContent=s.dataset.chapter||'';
+    hudN.textContent=(i+1)+' / '+slides.length;
+    notes.textContent=s.dataset.notes||'(발표자 노트 없음)';
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    bar.style.background=getComputedStyle(s).getPropertyValue('--accent')||'#152A20';
+    history.replaceState(null,'','#s'+(i+1));
+    resetTimer(s);
+  }
+  const go=d=>show(i+d);
+
+  addEventListener('keydown',e=>{
+    const k=e.key;
+    if(k==='ArrowRight'||k===' '||k==='PageDown'){go(1);e.preventDefault();}
+    else if(k==='ArrowLeft'||k==='PageUp'){go(-1);e.preventDefault();}
+    else if(k==='Home'){show(0);} else if(k==='End'){show(slides.length-1);}
+    else if(k==='f'||k==='F'){document.documentElement.requestFullscreen?.();}
+    else if(k==='n'||k==='N'){document.body.classList.toggle('show-notes');}
+    else if(k==='o'||k==='O'){document.body.classList.toggle('show-toc');}
+    else if(k==='b'||k==='B'){blank=!blank;stage.style.visibility=blank?'hidden':'visible';}
+    else if(k==='?'){document.body.classList.toggle('show-help');}
+    else if(k==='Escape'){document.body.classList.remove('show-help','show-toc');}
+  });
+  document.getElementById('prev').onclick=()=>go(-1);
+  document.getElementById('next').onclick=()=>go(1);
+  stage.addEventListener('click',e=>{ if(!e.target.closest('button')) go(1); });
+
+  let x0=null;
+  addEventListener('touchstart',e=>{x0=e.changedTouches[0].clientX},{passive:true});
+  addEventListener('touchend',e=>{
+    if(x0===null)return; const dx=e.changedTouches[0].clientX-x0; x0=null;
+    if(Math.abs(dx)>60) go(dx<0?1:-1);
+  },{passive:true});
+
+  let tick=null;
+  function resetTimer(sec){
+    clearInterval(tick);
+    const box=sec.querySelector('.timer'); if(!box) return;
+    const mins=+sec.dataset.timer||5;
+    const face=box.querySelector('.timer__face'), btn=box.querySelector('button');
+    let left=mins*60, running=false;
+    box.classList.remove('is-done');
+    const paint=()=>face.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+    paint(); btn.textContent='시작';
+    btn.onclick=ev=>{
+      ev.stopPropagation();
+      if(running){clearInterval(tick);running=false;btn.textContent='계속';return;}
+      running=true;btn.textContent='멈춤';
+      tick=setInterval(()=>{ left--; paint();
+        if(left<=0){clearInterval(tick);running=false;box.classList.add('is-done');btn.textContent='다시';left=mins*60;}
+      },1000);
+    };
+  }
+
+  const start=parseInt((location.hash||'').replace('#s',''),10);
+  show(Number.isFinite(start)&&start>0?start-1:0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. 블록으로 명령하기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- FONT-FACE -->
+<style>
+/* ========== 디자인 토큰 ==========
+   색은 팔레트 밖으로 나가지 않는다. 새 색을 추가하지 말 것.
+   본문 글자색은 항상 --ink. 파스텔 위 흰 글씨는 금지(대비 2.06:1). */
+:root{
+  /* surface */
+  --bg:#FFF8F7; --grid:#F5DBDC; --white:#FFFFFF; --soft:#FDF2F1;
+  /* ink */
+  --ink:#152A20;
+  /* color blocks */
+  --pink:#FC999F; --purple:#D6BDF7; --orange:#FFD4A8;
+  --yellow:#FAE5A8; --mint:#9CF0E5; --green:#D2FABB;
+  --accent:var(--pink);
+
+  /* spacing — 8px 기반 */
+  --s-xxs:4px; --s-xs:8px; --s-sm:12px; --s-md:16px;
+  --s-lg:24px; --s-xl:32px; --s-xxl:48px;
+
+  /* radius */
+  --r-sm:8px; --r-md:16px; --r-lg:24px; --r-xl:32px; --r-pill:999px;
+
+  --bw:2.5px;
+  --font-title:"Paperlogy","Black Han Sans","Jua","Pretendard","Noto Sans KR",sans-serif;
+  --font-body:"Paperlogy","Gowun Dodum","Pretendard","Noto Sans KR",sans-serif;
+  --font-label:"Paperlogy","Jua","Pretendard","Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#241d1b}
+body{font-family:var(--font-body);color:var(--ink);display:grid;place-items:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ========== 무대 ========== */
+#stage{width:1280px;height:720px;position:relative;transform-origin:center center;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:72px 72px;overflow:hidden}
+section{position:absolute;inset:0;padding:var(--s-xl) 40px;display:none;flex-direction:column}
+section.is-active{display:flex;animation:pop .22s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.99)}to{opacity:1;transform:none}}
+#bar{position:absolute;left:0;top:0;height:6px;background:var(--ink);z-index:30;
+  transition:width .25s ease;opacity:.85}
+
+/* ========== 브라우저 창 ========== */
+.win{flex:1;min-height:0;display:flex;flex-direction:column;border:var(--bw) solid var(--ink);
+  border-radius:var(--r-lg);background:var(--white);position:relative}
+.win__bar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:var(--s-sm);padding:10px var(--s-lg);
+  background:var(--bg);border-bottom:var(--bw) solid var(--ink);
+  border-radius:calc(var(--r-lg) - 2px) calc(var(--r-lg) - 2px) 0 0;min-height:70px;flex:none}
+.win__bar h1,.win__bar h2{justify-self:center;min-width:0;text-align:center;
+  font-family:var(--font-title);font-size:52px;line-height:1.1;letter-spacing:-.025em;white-space:nowrap}
+.win__bar h1.sm{font-size:44px}
+.win__bar h1.xs{font-size:36px;white-space:normal;line-height:1.15}
+.barleft{justify-self:start;min-width:0;display:flex}
+.dots{display:flex;gap:10px;justify-self:end;flex:none}
+.dots i{width:19px;height:19px;border-radius:50%;border:var(--bw) solid var(--ink);display:block}
+.dots i:nth-child(1){background:var(--yellow)}
+.dots i:nth-child(2){background:var(--pink)}
+.dots i:nth-child(3){background:var(--mint)}
+.win__body{flex:1;min-height:0;display:flex;flex-direction:column;padding:var(--s-lg) var(--s-xxl);
+  overflow:hidden;border-radius:0 0 calc(var(--r-lg) - 2px) calc(var(--r-lg) - 2px)}
+.win--fill .win__body{background:var(--accent)}
+.win__body.center{align-items:center;justify-content:center}
+.divider-title{flex:1;min-height:0;display:grid;place-items:center;width:100%}
+.win__body.divider{align-items:center;padding-bottom:var(--s-xxl)}
+.win__body.divider .caption{width:68%;font-size:46px}
+.win__body.tight{padding:var(--s-md) var(--s-lg)}
+.termblock{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s-xl);text-align:center}
+
+/* 눈썹 라벨 — 타이틀바 왼쪽. 지금 어느 챕터인지 늘 보인다 */
+.eyebrow{font-family:var(--font-label);font-size:25px;line-height:1.2;white-space:nowrap;
+  letter-spacing:.02em;background:var(--accent);border:2px solid var(--ink);color:var(--ink);
+  border-radius:var(--r-pill);padding:5px 20px;overflow:hidden;text-overflow:ellipsis}
+
+/* ========== 타이포 ==========
+   크기가 아니라 굵기로 위계를 만든다. 본문은 34px 아래로 내리지 않는다. */
+.big{font-family:var(--font-title);font-size:104px;line-height:1.05;text-align:center;letter-spacing:-.035em}
+.big.sm{font-size:84px} .big.xs{font-size:68px} .big.xxs{font-size:56px}
+.mid{font-family:var(--font-title);font-size:66px;line-height:1.3;text-align:center}
+.lead{font-size:42px;line-height:1.45;font-weight:500}
+.lead.center{text-align:center}
+b,strong{font-family:var(--font-title);font-weight:700}
+
+/* 알약 — 이 스타일의 서명. 글자색은 언제나 잉크. */
+.pill{display:inline-block;background:var(--orange);color:var(--ink);border-radius:var(--r-pill);
+  padding:12px var(--s-xl);font-family:var(--font-title);font-size:44px;line-height:1.25}
+.pill.lg{font-size:58px;padding:16px 40px}
+.pill.sm{font-size:34px;padding:8px 24px}
+.pill.pink{background:var(--pink)} .pill.mint{background:var(--mint)}
+.pill.yellow{background:var(--yellow)} .pill.purple{background:var(--purple)}
+.win__body>.pill{align-self:flex-start}
+.pillrow{display:flex;justify-content:center;margin-top:auto;padding-top:var(--s-md);flex:none}
+
+.goals{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:var(--s-xxl)}
+.goal{border-radius:var(--r-pill);padding:32px 48px;font-family:var(--font-title);font-size:46px;
+  line-height:1.3;text-align:center;color:var(--ink)}
+.goal:nth-child(1){background:var(--orange)}
+.goal:nth-child(2){background:var(--pink)}
+.goal:nth-child(3){background:var(--purple)}
+
+ul.bullets{list-style:none;display:flex;flex-direction:column;gap:var(--s-lg);justify-content:center;flex:1;min-height:0}
+ul.bullets li{font-size:42px;line-height:1.4;padding-left:52px;position:relative}
+ul.bullets li::before{content:"";position:absolute;left:0;top:.30em;width:28px;height:28px;
+  border:var(--bw) solid var(--ink);border-radius:var(--r-sm);background:var(--accent)}
+ol.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:var(--s-lg);flex:1;min-height:0;justify-content:center}
+ol.steps li{counter-increment:s;font-size:42px;line-height:1.4;padding-left:80px;position:relative}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:-4px;width:56px;height:56px;
+  display:grid;place-items:center;font-family:var(--font-title);font-size:32px;
+  border:var(--bw) solid var(--ink);border-radius:50%;background:var(--accent)}
+.caption{background:var(--bg);border:var(--bw) solid var(--ink);border-radius:var(--r-md);
+  padding:20px var(--s-xl);font-size:42px;font-family:var(--font-body);text-align:center;flex:none}
+
+/* ========== 카드 ========== */
+.cards{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:var(--s-lg);align-items:stretch}
+.card{border:var(--bw) solid var(--ink);border-radius:var(--r-lg);padding:var(--s-lg);display:flex;
+  flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px}
+.card h3{font-family:var(--font-title);font-size:40px;line-height:1.25}
+.card p{font-size:30px;line-height:1.45}
+.card:nth-child(1){background:var(--pink)}
+.card:nth-child(2){background:var(--orange)}
+.card:nth-child(3){background:var(--purple)}
+.card:nth-child(4){background:var(--mint)}
+
+/* ========== 미디어 / 콜아웃 ========== */
+.media{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+.media img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.media img:not(.framed){width:100%;height:100%}
+.media img.framed{border:var(--bw) solid var(--ink);border-radius:var(--r-md)}
+img.px{image-rendering:pixelated}
+.shot{position:relative;display:inline-block;max-width:100%;max-height:100%;line-height:0}
+.shot img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.gallery{flex:1;min-height:0;display:grid;gap:var(--s-md);align-items:center;justify-items:center;
+  grid-template-columns:repeat(var(--n,4),1fr)}
+.gallery img{width:100%;height:100%;object-fit:contain}
+.ring{position:absolute;border:5px solid var(--pink);border-radius:var(--r-lg);pointer-events:none}
+.tag{position:absolute;background:var(--pink);color:var(--ink);border-radius:var(--r-md);
+  padding:8px 24px;font-family:var(--font-title);font-size:34px;line-height:1.2;
+  text-align:center;pointer-events:none;white-space:nowrap;transform:translate(-50%,-50%)}
+.compare{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--n,3),1fr);
+  gap:20px;align-items:end;justify-items:center}
+.compare figure{display:flex;flex-direction:column;align-items:center;gap:var(--s-sm);height:100%;min-height:0;justify-content:flex-end}
+.compare img{width:100%;height:100%;object-fit:contain;min-height:0}
+
+/* ========== 표지 ========== */
+.shadowbox{position:relative;display:inline-block;max-width:100%}
+.shadowbox::before{content:"";position:absolute;inset:20px -10px -18px 10px;background:var(--green);
+  border:var(--bw) solid var(--ink);border-radius:var(--r-lg)}
+.shadowbox>*{position:relative;background:var(--yellow);border:var(--bw) solid var(--ink);
+  border-radius:var(--r-lg);padding:var(--s-xl) 40px}
+.lesson{font-family:var(--font-title);font-size:58px;line-height:1.2;text-align:center;color:var(--ink);
+  background:var(--white);border:var(--bw) solid var(--ink);border-radius:var(--r-pill);padding:12px 52px}
+.lesson em{font-style:normal;opacity:.55;margin-right:var(--s-sm)}
+
+/* ========== 장식 ========== */
+.sticker{position:absolute;z-index:5;pointer-events:none}
+.sticker svg{display:block;overflow:visible}
+.sticker path,.sticker circle,.sticker polygon,.sticker rect,.sticker ellipse{
+  stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;
+  vector-effect:non-scaling-stroke}
+.obj{position:absolute;z-index:4;pointer-events:none}
+.obj svg{display:block;overflow:visible}
+.obj path,.obj rect,.obj circle,.obj ellipse,.obj line{
+  stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;
+  vector-effect:non-scaling-stroke}
+.doodle{position:absolute;z-index:0;pointer-events:none}
+.doodle path{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+
+/* ========== 타이머 ========== */
+.timer{display:flex;align-items:center;gap:var(--s-md);justify-content:center;margin-top:auto;padding-top:var(--s-md);flex:none}
+.timer__face{font-family:var(--font-title);font-size:78px;min-width:220px;text-align:center;
+  background:var(--white);border:var(--bw) solid var(--ink);border-radius:var(--r-md);padding:4px 18px;
+  font-variant-numeric:tabular-nums}
+.timer button{font-family:var(--font-title);font-size:30px;min-height:48px;padding:10px var(--s-lg);cursor:pointer;
+  background:var(--yellow);border:var(--bw) solid var(--ink);border-radius:var(--r-pill);color:var(--ink)}
+.timer button:active{transform:translateY(2px)}
+.timer.is-done .timer__face{background:var(--pink);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{background:var(--white)}}
+
+/* ========== 화면 밖 조작 UI ========== */
+#hud{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:var(--s-sm);
+  padding:var(--s-xs) var(--s-md);color:#fff;font-size:14px;font-family:var(--font-label);
+  background:linear-gradient(transparent,rgba(0,0,0,.45));pointer-events:none;z-index:20}
+#hud .chapter{opacity:.75} #hud .count{margin-left:auto;opacity:.75}
+.navbtn{position:fixed;top:50%;transform:translateY(-50%);z-index:25;width:64px;height:96px;
+  border:none;border-radius:var(--r-md);background:rgba(255,255,255,.10);color:#fff;font-size:34px;
+  cursor:pointer;opacity:0;transition:opacity .2s}
+body:hover .navbtn{opacity:.5}
+.navbtn:hover{opacity:1!important;background:rgba(255,255,255,.22)}
+.navbtn:focus-visible{opacity:1;outline:3px solid #fff}
+#prev{left:10px} #next{right:10px}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:36vh;overflow:auto;padding:18px var(--s-lg) 34px;
+  background:#1c1714;color:#f6efe9;font-size:17px;line-height:1.65;display:none;z-index:22;border-top:2px solid #4a403a}
+body.show-notes #notes{display:block}
+#toc{position:fixed;inset:0;background:rgba(20,16,14,.96);display:none;z-index:40;padding:40px;overflow:auto}
+body.show-toc #toc{display:block}
+#toc h2{color:#fff;font-family:var(--font-label);font-size:26px;margin-bottom:20px;text-align:center}
+#toc ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;max-width:1100px;margin:0 auto}
+#toc button{width:100%;text-align:left;display:flex;gap:var(--s-sm);align-items:baseline;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-sm);
+  color:#f6efe9;font:inherit;font-size:16px;padding:12px 14px;min-height:44px}
+#toc button:hover,#toc button:focus-visible{background:rgba(255,255,255,.2);outline:none}
+#toc button .n{font-family:var(--font-label);opacity:.6;min-width:26px}
+#toc button .c{margin-left:auto;font-size:12px;opacity:.55}
+#help{position:fixed;inset:0;background:rgba(20,16,14,.95);color:#fff;display:none;
+  place-items:center;font-size:20px;line-height:2.1;z-index:45;text-align:center}
+body.show-help #help{display:grid}
+kbd{background:#3a322d;border-radius:6px;padding:3px 11px;font-family:inherit;font-size:.9em}
+
+@media print{
+  html,body{overflow:visible;background:#fff}
+  #hud,#notes,#help,#toc,#bar,.navbtn{display:none!important}
+  #stage{transform:none!important}
+  section{display:flex!important;position:relative;page-break-after:always;width:1280px;height:720px}
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="bar"></div>
+<section style="--accent:var(--pink)" data-chapter="표지" data-title="블록으로 명령하기" data-notes="[TEST 덱] 인사 → 오늘은 로봇에게 말을 걸어 본다고 예고한다."><div class="win" style="border:none;background:none"><div class="win__bar" style="border:var(--bw) solid var(--ink);border-radius:var(--r-lg);padding-right:20px;margin:0 26px;display:flex"><h2 style="font-size:30px;text-align:right;flex:1">샘플 · 디지털 교육 프로그램</h2><div class="dots"><i></i><i></i><i></i></div></div><div style="flex:1;min-height:0;margin:var(--s-md) 26px 0;background:var(--pink);border:var(--bw) solid var(--ink);border-radius:var(--r-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;padding:28px"><div class="shadowbox"><div class="big sm">코딩 첫걸음<br>: 로봇에게 말을 걸어요</div></div><div class="lesson"><em>1.</em>블록으로 명령하기</div></div></div><span class="obj" style="top:34px;left:34px;transform:rotate(-20deg)"><svg width="76" height="214" viewBox="0 0 40 112"><rect x="9" y="2" width="22" height="14" rx="7" fill="#FFD4A8"/><rect x="9" y="15" width="22" height="7" fill="#EDE2FF"/><rect x="9" y="21" width="22" height="61" rx="3" fill="#D6BDF7"/><path d="M9 82h22l-8.5 22a2.6 2.6 0 0 1-5 0Z" fill="#FAE5A8"/><path d="M16.4 101.5h7.2l-2.1 5.5a1.6 1.6 0 0 1-3 0Z" fill="#152A20"/></svg></span><span class="obj" style="bottom:34px;left:32px"><svg width="88" height="129" viewBox="0 0 56 82"><rect x="3" y="3" width="50" height="76" rx="25" fill="#9CF0E5"/><path d="M28 5v26" fill="none"/><rect x="22.5" y="14" width="11" height="18" rx="5.5" fill="#D2FABB"/></svg></span><span class="obj" style="bottom:24px;right:6px;transform:rotate(-8deg)"><svg width="196" height="106" viewBox="0 0 140 76"><rect x="3" y="3" width="134" height="70" rx="12" fill="#FFD4A8"/><rect x="11" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="26" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="41" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="56" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="71" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="86" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="101" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="116" y="12" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="11" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="26" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="41" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="56" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="71" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="86" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="101" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="116" y="28" width="11" height="10" rx="3" fill="#FFF8F7"/><rect x="34" y="52" width="72" height="12" rx="5" fill="#FFF8F7"/></svg></span><span class="sticker" style="top:2px;left:236px;color:var(--orange)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="sticker" style="top:330px;right:2px;color:var(--purple)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span></section>
+<section style="--accent:var(--pink)" data-chapter="학습 목표" data-title="블록으로 명령하기" data-notes="세 문장을 다 함께 소리 내어 읽는다."><div class="win"><div class="win__bar"><span class="barleft"></span><h1 class="">학습 목표</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="goals"><div class="goal">블록을 순서대로 놓아요.</div><div class="goal">만든 명령을 로봇에게 보내요.</div><div class="goal">안 되면 고쳐서 다시 해요.</div></div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--mint)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span></section>
+<section style="--accent:var(--pink)" data-chapter="학습 목표" data-title="오늘 만나는 친구들" data-notes="실물 대시 로봇을 들어 보여 주면 집중도가 올라간다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">학습 목표</span></span><h1 class="">오늘 만나는 친구들</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="cards" style="--n:3"><div class="card"><h3>블록클리</h3><p>화면 속 친구에게<br>길을 알려 주기</p></div><div class="card"><h3>클레버블록</h3><p>블록을 쌓아<br>작품 만들기</p></div><div class="card"><h3>대시 로봇</h3><p>진짜 로봇을<br>움직여 보기</p></div></div></div></div></section>
+<section style="--accent:var(--orange)" data-chapter="1. 블록클리" data-title="블록클리" data-notes=""><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">블록클리</div></div><div class="caption" style="width:64%">순서대로 놓아야 길을 찾아요</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--green)"><svg width="74" height="74" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="currentColor"/><path d="M8.6 9.8v1.3M15.4 9.8v1.3" fill="none"/><path d="M8.8 14.2a4.2 4.2 0 0 0 6.4 0" fill="none"/></svg></span><span class="doodle" style="right:-6px;top:262px"><svg width="116" height="186" viewBox="0 0 130 230"><path d="M12 4c48 22 112 36 96 70s-76 6-66 44 64 26 58 62-60 30-82 46"/></svg></span></section>
+<section style="--accent:var(--orange)" data-chapter="1. 블록클리" data-title="명령이 뭘까요?" data-notes="'앞으로 세 칸'을 교사가 로봇처럼 따라 해 보이면 이해가 빠르다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">1. 블록클리</span></span><h1 class="">명령이 뭘까요?</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="termblock"><span class="pill lg">명령 Command</span><p class="mid" style="font-size:48px">컴퓨터에게 시키는 일 한 가지</p></div></div></div></section>
+<section style="--accent:var(--orange)" data-chapter="1. 블록클리" data-title="컴퓨터에게 말하는 법" data-notes="양말과 신발 순서를 예로 들면 웃으면서 이해한다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">1. 블록클리</span></span><h1 class="">컴퓨터에게 말하는 법</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ul class="bullets"><li>컴퓨터는 우리 마음을 못 읽어요</li><li>하나씩 차례대로 알려 줘요</li><li>블록 하나가 명령 하나예요</li></ul><div class="pillrow"><span class="pill">순서가 바뀌면 결과도 바뀌어요</span></div></div></div></section>
+<section style="--accent:var(--yellow)" data-chapter="1. 블록클리" data-title="미로를 빠져나가자" data-notes="먼저 끝낸 학생은 짝을 돕게 한다." data-timer="12"><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">1. 블록클리</span></span><h1 class="">미로를 빠져나가자</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ol class="steps"><li>미로 1단계를 연다</li><li>블록을 순서대로 놓는다</li><li>실행을 눌러 고친다</li></ol><div class="timer"><div class="timer__face">12:00</div><button type="button">시작</button></div></div></div></section>
+<section style="--accent:var(--pink)" data-chapter="2. 클레버블록" data-title="클레버블록" data-notes=""><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">클레버블록</div></div><div class="caption" style="width:64%">블록을 쌓아 작품을 만들어요</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--purple)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="doodle" style="right:-6px;top:262px"><svg width="116" height="186" viewBox="0 0 130 230"><path d="M12 4c48 22 112 36 96 70s-76 6-66 44 64 26 58 62-60 30-82 46"/></svg></span></section>
+<section style="--accent:var(--pink)" data-chapter="2. 클레버블록" data-title="왜 블록으로 할까?" data-notes="글자 코딩 화면을 잠깐 보여 주면 비교가 확실하다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">2. 클레버블록</span></span><h1 class="">왜 블록으로 할까?</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="cards" style="--n:2"><div class="card" style="background:var(--pink)"><h3>블록 코딩</h3><p>끼워 맞추면 되니까<br>금방 고쳐요</p></div><div class="card" style="background:var(--white)"><h3>글자 코딩</h3><p>한 글자만 틀려도<br>안 움직여요</p></div></div></div></div></section>
+<section style="--accent:var(--yellow)" data-chapter="2. 클레버블록" data-title="내 캐릭터 움직이기" data-notes="모둠 4명, 태블릿 2대 공유. 저장을 꼭 확인시킨다." data-timer="15"><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">2. 클레버블록</span></span><h1 class="">내 캐릭터 움직이기</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ol class="steps"><li>좋아하는 캐릭터를 고른다</li><li>움직이기 블록을 세 개 붙인다</li><li>친구에게 보여 준다</li></ol><div class="timer"><div class="timer__face">15:00</div><button type="button">시작</button></div></div></div></section>
+<section style="--accent:var(--purple)" data-chapter="3. 대시 로봇" data-title="대시 로봇" data-notes=""><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">대시 로봇</div></div><div class="caption" style="width:64%">화면 밖으로 나온 진짜 로봇</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--yellow)"><svg width="72" height="68" viewBox="0 0 24 23"><path fill="currentColor" d="M12 1.8 15 8.4 22.1 9.2 16.8 14 18.3 21 12 17.6 5.7 21 7.2 14 1.9 9.2 9 8.4Z"/></svg></span><span class="sticker" style="bottom:150px;right:-16px;color:var(--green)"><svg width="74" height="74" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="currentColor"/><path d="M8.6 9.8v1.3M15.4 9.8v1.3" fill="none"/><path d="M8.8 14.2a4.2 4.2 0 0 0 6.4 0" fill="none"/></svg></span><span class="doodle" style="left:-4px;top:330px"><svg width="116" height="196" viewBox="0 0 130 230"><path d="M118 4C70 26 6 40 22 74s76 6 66 44-64 26-58 62 60 30 82 46"/></svg></span></section>
+<section style="--accent:var(--purple)" data-chapter="3. 대시 로봇" data-title="열 칸 가라고 했는데
+앞에 벽이 있으면?" data-notes="예상 답변: 그냥 부딪힌다 / 멈춘다 → '로봇은 시킨 대로만 한다'로 정리한다."><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class="">생각해 봐요</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body center"><div class="mid">열 칸 가라고 했는데<br>앞에 벽이 있으면?</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--pink)"><svg width="74" height="74" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="currentColor"/><path d="M8.6 9.8v1.3M15.4 9.8v1.3" fill="none"/><path d="M8.8 14.2a4.2 4.2 0 0 0 6.4 0" fill="none"/></svg></span><span class="doodle" style="right:-6px;top:262px"><svg width="116" height="186" viewBox="0 0 130 230"><path d="M12 4c48 22 112 36 96 70s-76 6-66 44 64 26 58 62-60 30-82 46"/></svg></span></section>
+<section style="--accent:var(--yellow)" data-chapter="3. 대시 로봇" data-title="대시를 골인시켜라" data-notes="바닥에 테이프로 길 표시. 부딪혀도 괜찮다고 미리 안심시킨다." data-timer="15"><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">3. 대시 로봇</span></span><h1 class="">대시를 골인시켜라</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ol class="steps"><li>바닥에 그려진 길을 본다</li><li>앞으로·돌기 블록을 놓는다</li><li>대시를 놓고 실행한다</li></ol><div class="timer"><div class="timer__face">15:00</div><button type="button">시작</button></div></div></div></section>
+<section style="--accent:var(--mint)" data-chapter="정리" data-title="오늘 배운 것, 맞을까요?" data-notes="정답: O, X, O"><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">정리</span></span><h1 class="">오늘 배운 것, 맞을까요?</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><ul class="bullets"><li>컴퓨터는 시킨 순서대로 움직인다</li><li>블록을 아무렇게나 놓아도 된다</li><li>안 되면 고쳐서 다시 한다</li></ul><div class="pillrow"><span class="pill">손으로 O · X 를 표시해요</span></div></div></div></section>
+<section style="--accent:var(--mint)" data-chapter="정리" data-title="오늘 한 일을 자랑해요" data-notes="두세 명만 앞에 나와 빈칸을 채워 발표한다."><div class="win"><div class="win__bar"><span class="barleft"><span class="eyebrow">정리</span></span><h1 class="">오늘 한 일을 자랑해요</h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body "><div class="mid" style="flex:1;display:grid;place-items:center">가장 재미있었던 건</div><div class="pillrow"><span class="pill">______ 이에요!</span></div></div></div></section>
+<section style="--accent:var(--mint)" data-chapter="정리" data-title="블록으로 명령하기" data-notes="태블릿과 로봇 정리 안내 후 다음 차시 예고."><div class="win win--fill"><div class="win__bar"><span class="barleft"></span><h1 class=""></h1><div class="dots"><i></i><i></i><i></i></div></div><div class="win__body divider"><div class="divider-title"><div class="big">참 잘했어요</div></div><div class="caption">2. 대시 로봇으로 이야기 만들기</div></div></div><span class="sticker" style="top:2px;left:118px;color:var(--purple)"><svg width="72" height="66" viewBox="0 0 24 22"><path fill="currentColor" d="M12 20.4C12 20.4 2.6 14.2 2.6 8.2A5.2 5.2 0 0 1 12 5.1 5.2 5.2 0 0 1 21.4 8.2C21.4 14.2 12 20.4 12 20.4Z"/></svg></span><span class="doodle" style="right:-6px;top:262px"><svg width="116" height="186" viewBox="0 0 130 230"><path d="M12 4c48 22 112 36 96 70s-76 6-66 44 64 26 58 62-60 30-82 46"/></svg></span></section>
+</div>
+
+<button class="navbtn" id="prev" aria-label="이전 슬라이드">‹</button>
+<button class="navbtn" id="next" aria-label="다음 슬라이드">›</button>
+
+<div id="hud"><span class="chapter"></span><span class="count"></span></div>
+<div id="notes"></div>
+<div id="toc"><h2>목차 — 눌러서 이동 (O 키로 닫기)</h2><ol></ol></div>
+<div id="help"><div>
+  <kbd>→</kbd> <kbd>Space</kbd> 다음 &nbsp; <kbd>←</kbd> 이전<br>
+  <kbd>O</kbd> 목차 &nbsp; <kbd>N</kbd> 발표자 노트 &nbsp; <kbd>F</kbd> 전체화면<br>
+  <kbd>B</kbd> 화면 가리기 &nbsp; <kbd>Home</kbd> 처음으로<br>
+  <kbd>?</kbd> 또는 <kbd>Esc</kbd> 닫기
+</div></div>
+
+<script>
+(function(){
+  const stage=document.getElementById('stage');
+  const slides=[...stage.querySelectorAll('section')];
+  const hudC=document.querySelector('#hud .chapter'), hudN=document.querySelector('#hud .count');
+  const notes=document.getElementById('notes'), bar=document.getElementById('bar');
+  let i=0, blank=false;
+
+  function fit(){ stage.style.transform='scale('+Math.min(innerWidth/1280,innerHeight/720)+')'; }
+  addEventListener('resize',fit); fit();
+
+  const tocList=document.querySelector('#toc ol');
+  slides.forEach((s,k)=>{
+    const t=s.dataset.title||s.querySelector('h1,h2,.big,.mid')?.textContent.trim()||'슬라이드';
+    const li=document.createElement('li');
+    li.innerHTML='<button><span class="n">'+(k+1)+'</span><span>'+t+'</span>'+
+      (s.dataset.chapter?'<span class="c">'+s.dataset.chapter+'</span>':'')+'</button>';
+    li.querySelector('button').onclick=()=>{show(k);document.body.classList.remove('show-toc')};
+    tocList.appendChild(li);
+  });
+
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('is-active',k===i));
+    const s=slides[i];
+    hudC.textContent=s.dataset.chapter||'';
+    hudN.textContent=(i+1)+' / '+slides.length;
+    notes.textContent=s.dataset.notes||'(발표자 노트 없음)';
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    bar.style.background=getComputedStyle(s).getPropertyValue('--accent')||'#152A20';
+    history.replaceState(null,'','#s'+(i+1));
+    resetTimer(s);
+  }
+  const go=d=>show(i+d);
+
+  addEventListener('keydown',e=>{
+    const k=e.key;
+    if(k==='ArrowRight'||k===' '||k==='PageDown'){go(1);e.preventDefault();}
+    else if(k==='ArrowLeft'||k==='PageUp'){go(-1);e.preventDefault();}
+    else if(k==='Home'){show(0);} else if(k==='End'){show(slides.length-1);}
+    else if(k==='f'||k==='F'){document.documentElement.requestFullscreen?.();}
+    else if(k==='n'||k==='N'){document.body.classList.toggle('show-notes');}
+    else if(k==='o'||k==='O'){document.body.classList.toggle('show-toc');}
+    else if(k==='b'||k==='B'){blank=!blank;stage.style.visibility=blank?'hidden':'visible';}
+    else if(k==='?'){document.body.classList.toggle('show-help');}
+    else if(k==='Escape'){document.body.classList.remove('show-help','show-toc');}
+  });
+  document.getElementById('prev').onclick=()=>go(-1);
+  document.getElementById('next').onclick=()=>go(1);
+  stage.addEventListener('click',e=>{ if(!e.target.closest('button')) go(1); });
+
+  let x0=null;
+  addEventListener('touchstart',e=>{x0=e.changedTouches[0].clientX},{passive:true});
+  addEventListener('touchend',e=>{
+    if(x0===null)return; const dx=e.changedTouches[0].clientX-x0; x0=null;
+    if(Math.abs(dx)>60) go(dx<0?1:-1);
+  },{passive:true});
+
+  let tick=null;
+  function resetTimer(sec){
+    clearInterval(tick);
+    const box=sec.querySelector('.timer'); if(!box) return;
+    const mins=+sec.dataset.timer||5;
+    const face=box.querySelector('.timer__face'), btn=box.querySelector('button');
+    let left=mins*60, running=false;
+    box.classList.remove('is-done');
+    const paint=()=>face.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+    paint(); btn.textContent='시작';
+    btn.onclick=ev=>{
+      ev.stopPropagation();
+      if(running){clearInterval(tick);running=false;btn.textContent='계속';return;}
+      running=true;btn.textContent='멈춤';
+      tick=setInterval(()=>{ left--; paint();
+        if(left<=0){clearInterval(tick);running=false;box.classList.add('is-done');btn.textContent='다시';left=mins*60;}
+      },1000);
+    };
+  }
+
+  const start=parseInt((location.hash||'').replace('#s',''),10);
+  show(Number.isFinite(start)&&start>0?start-1:0);
+})();
+</script>
+</body>
+</html>

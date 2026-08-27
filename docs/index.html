@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kyoan-slides — 교안을 그리지 않고 쓰기만 합니다</title>
+<meta name="description" content="초·중·고 수업 교안을 명세 파일 하나로 찍어내는 슬라이드 제작 스킬. 발표자료와 예시 교안을 바로 열어볼 수 있습니다.">
+<meta property="og:title" content="kyoan-slides — 교안을 그리지 않고 쓰기만 합니다">
+<meta property="og:description" content="교안 디자인을 코드에 고정하고, 매 차시 쓰는 건 내용뿐. 발표자료와 예시 교안 공개.">
+<meta property="og:image" content="images/gallery.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF8F7; --grid:#F5DBDC; --ink:#152A20; --white:#fff;
+  --pink:#FC999F; --orange:#FFD4A8; --purple:#D6BDF7; --mint:#9CF0E5; --yellow:#FAE5A8; --green:#D2FABB;
+  --bw:2.5px; --r:24px;
+  --f:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);color:var(--ink);line-height:1.65;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:56px 56px}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+a{color:inherit}
+header{padding:72px 0 40px}
+.chip{display:inline-block;background:var(--mint);border:2px solid var(--ink);border-radius:999px;
+  padding:6px 18px;font-size:15px;font-weight:700;margin-bottom:22px}
+h1{font-size:clamp(34px,6vw,58px);line-height:1.15;letter-spacing:-.03em;font-weight:700}
+.lead{font-size:clamp(17px,2.4vw,21px);margin-top:18px;max-width:640px;font-weight:500}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.btn{display:inline-block;border:var(--bw) solid var(--ink);border-radius:999px;padding:13px 26px;
+  font-weight:700;font-size:17px;text-decoration:none;background:var(--white)}
+.btn.p{background:var(--pink)} .btn.o{background:var(--orange)}
+.btn:hover{transform:translateY(-2px)}
+section{padding:40px 0}
+h2{font-size:clamp(24px,3.6vw,32px);letter-spacing:-.02em;margin-bottom:8px}
+.sub{font-size:16px;opacity:.72;margin-bottom:26px}
+.shot{width:100%;border:var(--bw) solid var(--ink);border-radius:var(--r);display:block;background:var(--white)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{border:var(--bw) solid var(--ink);border-radius:var(--r);padding:24px;background:var(--white)}
+.card h3{font-size:19px;margin-bottom:8px}
+.card p{font-size:15px;opacity:.8}
+.card.a{background:var(--orange)} .card.b{background:var(--pink)} .card.c{background:var(--purple)}
+ul.plain{list-style:none;display:flex;flex-direction:column;gap:12px}
+ul.plain li{font-size:17px;padding-left:30px;position:relative}
+ul.plain li::before{content:"";position:absolute;left:0;top:.5em;width:16px;height:16px;
+  border:2px solid var(--ink);border-radius:5px;background:var(--yellow)}
+pre{background:var(--white);border:var(--bw) solid var(--ink);border-radius:16px;padding:20px;
+  overflow-x:auto;font-size:14px;line-height:1.7;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+footer{padding:48px 0 72px;font-size:14px;opacity:.7;border-top:2px solid var(--grid);margin-top:40px}
+@media (max-width:520px){ .btn{width:100%;text-align:center} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="chip">수업 교안 제작 도구</span>
+  <h1>교안을 그리지 않고<br>쓰기만 합니다</h1>
+  <p class="lead">초·중·고 수업 교안의 디자인을 코드에 고정해 두고,
+     매 차시 쓰는 건 내용뿐입니다. 명세 파일 하나에서 슬라이드 한 벌이 나옵니다.</p>
+  <div class="btns">
+    <a class="btn p" href="talk.html">발표자료 보기 →</a>
+    <a class="btn o" href="example-pixelart.html">예시 교안 열기</a>
+    <a class="btn" href="https://github.com/m22oi/kyoan-slides">GitHub</a>
+  </div>
+</header>
+
+<section>
+  <h2>이렇게 나옵니다</h2>
+  <p class="sub">아래 여섯 장 모두 명세 파일 하나에서 자동으로 만들어졌습니다.</p>
+  <img class="shot" src="images/gallery.png" alt="생성된 교안 슬라이드 여섯 장 — 표지·간지·용어·앱 화면·활동·비교">
+</section>
+
+<section>
+  <h2>쓰는 건 이것뿐</h2>
+  <p class="sub">색·글자 크기·장식 위치는 한 줄도 쓰지 않습니다.</p>
+<pre>{
+  "meta": { "course": "드로잉 게임메이커",
+            "lessonTitle": "네모로 그리는 픽셀아트" },
+  "slides": [
+    { "type": "term", "title": "픽셀이 뭘까요?",
+      "term": "픽셀 Pixel",
+      "def": "그림을 이루는 작은 네모 한 칸" },
+    { "type": "activity", "title": "5칸에 하트 그리기", "timer": 12 }
+  ]
+}</pre>
+</section>
+
+<section>
+  <h2>무엇이 자동인가</h2>
+  <div class="cards">
+    <div class="card a"><h3>디자인 판단</h3>
+      <p>챕터 색 순환, 장식 배치, 제목 크기, 챕터 라벨을 도구가 정합니다.</p></div>
+    <div class="card b"><h3>학년 수준 검사</h3>
+      <p>한 줄 20자·글머리표 4개·활동 3단계·어려운 낱말을 빌드가 잡아냅니다.</p></div>
+    <div class="card c"><h3>교실 UX</h3>
+      <p>목차 점프, 발표자 노트, 활동 타이머, 화면 가리기, PDF 내보내기.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>교실에서 쓰는 법</h2>
+  <ul class="plain">
+    <li>HTML 파일 하나입니다. 교실 PC에서 더블클릭하면 열립니다 — 설치도 인터넷도 필요 없습니다.</li>
+    <li><b>F</b> 전체화면 · <b>→</b> 다음 · <b>O</b> 목차 · <b>N</b> 발표자 노트 · <b>B</b> 화면 가리기 · <b>P</b> PDF</li>
+    <li>활동 슬라이드의 타이머는 눌러서 바로 씁니다. 0이 되면 깜빡입니다.</li>
+  </ul>
+</section>
+
+<footer>
+  코드 MIT · 문서와 예시 교안 CC BY 4.0 &nbsp;·&nbsp;
+  예시에 쓰인 사업명·기관명은 공개용으로 중립하게 바꾼 것입니다.
+</footer>
+
+</div>
+</body>
+</html>
